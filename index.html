@@ -3,83 +3,401 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Almoxarifado Tecnológico</title>
+
     <link rel="stylesheet" href="css/style.css" />
   </head>
+
   <body>
-    <header>
-      <h1>Almoxarifado Tecnológico</h1>
-      <nav>
-        <button data-section="dashboard">Dashboard</button>
-        <button data-section="produtos">Produtos</button>
-        <button data-section="adicionar">Adicionar</button>
-        <button data-section="categorias">Categorias</button>
-        <button data-section="emprestimos">Empréstimos</button>
+    <!-- CABEÇALHO -->
+    <header class="header">
+      <div class="header-content">
+        <div>
+          <h1>Almoxarifado Tecnológico</h1>
+          <p>Controle de estoque e empréstimos</p>
+        </div>
+
+        <button id="theme-toggle" class="theme-button">🌙</button>
+      </div>
+
+      <!-- MENU -->
+      <nav class="navigation">
+        <button class="nav-button active" data-section="dashboard">
+          📊 Dashboard
+        </button>
+
+        <button class="nav-button" data-section="produtos">📦 Produtos</button>
+
+        <button class="nav-button" data-section="adicionar">
+          ➕ Adicionar
+        </button>
+
+        <button class="nav-button" data-section="categorias">
+          🏷️ Categorias
+        </button>
+
+        <button class="nav-button" data-section="emprestimos">
+          📤 Empréstimos
+        </button>
+
+        <button class="nav-button" data-section="historico">
+          📜 Histórico
+        </button>
+
+        <button class="nav-button" data-section="sistema">⚙️ Sistema</button>
       </nav>
     </header>
 
-    <main>
+    <main class="container">
+      <!-- ========================= -->
+      <!-- DASHBOARD -->
+      <!-- ========================= -->
+
       <section id="dashboard" class="section active">
-        <h2>Dashboard</h2>
-        <div id="dashboard-cards"></div>
-        <h3>Estoque por categoria</h3>
-        <div id="category-summary"></div>
+        <div class="section-header">
+          <div>
+            <h2>Dashboard</h2>
+            <p>Visão geral do almoxarifado</p>
+          </div>
+        </div>
+
+        <div id="dashboard-cards" class="dashboard-grid"></div>
+
+        <div class="dashboard-columns">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Estoque por categoria</h3>
+            </div>
+
+            <div id="category-summary"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Movimentações recentes</h3>
+            </div>
+
+            <div id="recent-history"></div>
+          </div>
+        </div>
       </section>
+
+      <!-- ========================= -->
+      <!-- PRODUTOS -->
+      <!-- ========================= -->
 
       <section id="produtos" class="section">
-        <h2>Produtos</h2>
-        <input
-          id="search-input"
-          type="search"
-          placeholder="Pesquisar por nome, código ou categoria..."
-        />
-        <select id="category-filter">
-          <option value="">Todas as categorias</option>
-        </select>
-        <div id="product-list"></div>
+        <div class="section-header">
+          <div>
+            <h2>Produtos</h2>
+            <p>Consulte e gerencie os componentes cadastrados.</p>
+          </div>
+
+          <button class="primary-button" data-section="adicionar">
+            ➕ Novo produto
+          </button>
+        </div>
+
+        <div class="filters">
+          <input
+            id="search-input"
+            type="search"
+            placeholder="🔎 Pesquisar por nome, código ou categoria..."
+          />
+
+          <select id="category-filter">
+            <option value="">Todas as categorias</option>
+          </select>
+
+          <select id="status-filter">
+            <option value="">Todos os status</option>
+
+            <option value="available">Disponível</option>
+
+            <option value="low">Estoque baixo</option>
+
+            <option value="empty">Esgotado</option>
+
+            <option value="borrowed">Emprestado</option>
+          </select>
+
+          <select id="sort-filter">
+            <option value="name">Ordenar por nome</option>
+
+            <option value="quantity">Ordenar por quantidade</option>
+
+            <option value="category">Ordenar por categoria</option>
+
+            <option value="newest">Mais recentes</option>
+          </select>
+        </div>
+
+        <div id="product-list" class="product-grid"></div>
       </section>
+
+      <!-- ========================= -->
+      <!-- ADICIONAR -->
+      <!-- ========================= -->
 
       <section id="adicionar" class="section">
-        <h2>Adicionar produto</h2>
-        <form id="product-form">
-          <input id="name" required placeholder="Nome do componente" />
-          <input id="code" required placeholder="Código / patrimônio" />
-          <select id="category" required></select>
-          <input
-            id="quantity"
-            required
-            type="number"
-            min="0"
-            placeholder="Quantidade"
-          />
-          <input
-            id="minimum"
-            required
-            type="number"
-            min="0"
-            placeholder="Estoque mínimo"
-          />
-          <input id="location" placeholder="Localização (ex.: Armário A)" />
-          <textarea id="description" placeholder="Descrição"></textarea>
-          <button type="submit">Salvar produto</button>
+        <div class="section-header">
+          <div>
+            <h2 id="form-title">Adicionar produto</h2>
+            <p>Cadastre um novo componente no almoxarifado.</p>
+          </div>
+        </div>
+
+        <form id="product-form" class="form-card">
+          <input type="hidden" id="editing-id" />
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="name"> Nome do componente </label>
+
+              <input id="name" required placeholder="Ex.: Teclado mecânico" />
+            </div>
+
+            <div class="form-group">
+              <label for="code"> Código / patrimônio </label>
+
+              <input id="code" required placeholder="Ex.: TEC-001" />
+            </div>
+
+            <div class="form-group">
+              <label for="category"> Categoria </label>
+
+              <select id="category" required></select>
+            </div>
+
+            <div class="form-group">
+              <label for="quantity"> Quantidade </label>
+
+              <input
+                id="quantity"
+                required
+                type="number"
+                min="0"
+                placeholder="Ex.: 10"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="minimum"> Estoque mínimo </label>
+
+              <input
+                id="minimum"
+                required
+                type="number"
+                min="0"
+                placeholder="Ex.: 3"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="location"> Localização </label>
+
+              <input id="location" placeholder="Ex.: Armário A" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="description"> Descrição </label>
+
+            <textarea
+              id="description"
+              placeholder="Descrição do produto..."
+            ></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              id="cancel-edit"
+              class="secondary-button hidden"
+            >
+              Cancelar edição
+            </button>
+
+            <button type="submit" class="primary-button">
+              💾 Salvar produto
+            </button>
+          </div>
         </form>
       </section>
+
+      <!-- ========================= -->
+      <!-- CATEGORIAS -->
+      <!-- ========================= -->
 
       <section id="categorias" class="section">
-        <h2>Categorias</h2>
-        <form id="category-form">
-          <input id="category-name" required placeholder="Nova categoria" />
-          <button type="submit">Adicionar categoria</button>
+        <div class="section-header">
+          <div>
+            <h2>Categorias</h2>
+            <p>Organize os componentes do almoxarifado.</p>
+          </div>
+        </div>
+
+        <form id="category-form" class="category-form">
+          <input
+            id="category-name"
+            required
+            placeholder="Nome da nova categoria"
+          />
+
+          <button type="submit" class="primary-button">
+            ➕ Adicionar categoria
+          </button>
         </form>
-        <ul id="category-list"></ul>
+
+        <ul id="category-list" class="category-list"></ul>
       </section>
 
+      <!-- ========================= -->
+      <!-- EMPRÉSTIMOS -->
+      <!-- ========================= -->
+
       <section id="emprestimos" class="section">
-        <h2>Empréstimos</h2>
+        <div class="section-header">
+          <div>
+            <h2>Empréstimos</h2>
+            <p>Controle os componentes que estão fora do estoque.</p>
+          </div>
+        </div>
 
         <div id="loan-list"></div>
       </section>
+
+      <!-- ========================= -->
+      <!-- HISTÓRICO -->
+      <!-- ========================= -->
+
+      <section id="historico" class="section">
+        <div class="section-header">
+          <div>
+            <h2>Histórico</h2>
+            <p>Registro das movimentações realizadas no sistema.</p>
+          </div>
+
+          <button id="clear-history" class="danger-button">
+            🗑️ Limpar histórico
+          </button>
+        </div>
+
+        <div id="history-list"></div>
+      </section>
+
+      <!-- ========================= -->
+      <!-- SISTEMA -->
+      <!-- ========================= -->
+
+      <section id="sistema" class="section">
+        <div class="section-header">
+          <div>
+            <h2>Sistema</h2>
+            <p>Ferramentas para gerenciamento dos dados.</p>
+          </div>
+        </div>
+
+        <div class="system-grid">
+          <div class="system-card">
+            <span class="system-icon"> 📥 </span>
+
+            <h3>Exportar estoque</h3>
+
+            <p>Baixe todos os produtos cadastrados em formato CSV.</p>
+
+            <button id="export-csv" class="primary-button">Exportar CSV</button>
+          </div>
+
+          <div class="system-card">
+            <span class="system-icon"> 💾 </span>
+
+            <h3>Backup</h3>
+
+            <p>Salve todos os dados do sistema em um arquivo JSON.</p>
+
+            <button id="export-backup" class="primary-button">
+              Criar backup
+            </button>
+          </div>
+
+          <div class="system-card">
+            <span class="system-icon"> 📂 </span>
+
+            <h3>Restaurar backup</h3>
+
+            <p>Importe um backup anteriormente criado.</p>
+
+            <input type="file" id="import-backup" accept=".json" />
+          </div>
+
+          <div class="system-card">
+            <span class="system-icon"> ⚠️ </span>
+
+            <h3>Dados locais</h3>
+
+            <p>Os dados são armazenados neste navegador usando localStorage.</p>
+
+            <button id="clear-data" class="danger-button">
+              Apagar todos os dados
+            </button>
+          </div>
+        </div>
+      </section>
     </main>
+
+    <!-- MODAL DE EMPRÉSTIMO -->
+
+    <div id="loan-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Registrar empréstimo</h2>
+
+          <button id="close-modal" class="close-button">✕</button>
+        </div>
+
+        <form id="loan-form">
+          <input type="hidden" id="loan-product-id" />
+
+          <div class="form-group">
+            <label for="borrower"> Responsável </label>
+
+            <input id="borrower" required placeholder="Nome da pessoa" />
+          </div>
+
+          <div class="form-group">
+            <label for="loan-quantity"> Quantidade </label>
+
+            <input id="loan-quantity" required type="number" min="1" />
+          </div>
+
+          <div class="form-group">
+            <label for="loan-reason"> Motivo </label>
+
+            <input id="loan-reason" placeholder="Ex.: Aula, manutenção..." />
+          </div>
+
+          <div class="form-group">
+            <label for="loan-due-date"> Data prevista para devolução </label>
+
+            <input id="loan-due-date" required type="date" />
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="cancel-loan" class="secondary-button">
+              Cancelar
+            </button>
+
+            <button type="submit" class="primary-button">
+              📤 Registrar empréstimo
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="toast-container"></div>
 
     <script src="js/app.js"></script>
   </body>
