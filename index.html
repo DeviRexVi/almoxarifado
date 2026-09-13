@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Almoxarifado Tecnológico</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- =========================
+         CABEÇALHO
+    ========================== -->
+
+    <header>
+
+        <div class="header-content">
+
+            <div>
+                <h1>Almoxarifado Tecnológico</h1>
+                <p>Controle de estoque e empréstimos</p>
+            </div>
+
+            <button id="theme-toggle" class="theme-button">
+                🌙 Modo escuro
+            </button>
+
+        </div>
+
+        <nav>
+
+            <button data-section="dashboard">
+                Dashboard
+            </button>
+
+            <button data-section="produtos">
+                Produtos
+            </button>
+
+            <button data-section="adicionar">
+                Adicionar
+            </button>
+
+            <button data-section="categorias">
+                Categorias
+            </button>
+
+            <button data-section="emprestimos">
+                Empréstimos
+            </button>
+
+            <button data-section="historico">
+                Histórico
+            </button>
+
+            <button data-section="sistema">
+                Sistema
+            </button>
+
+        </nav>
+
+    </header>
+
+
+    <main>
+
+        <!-- =========================
+             DASHBOARD
+        ========================== -->
+
+        <section id="dashboard" class="section active">
+
+            <h2>Dashboard</h2>
+
+            <div id="dashboard-cards" class="dashboard-cards"></div>
+
+            <div class="dashboard-section">
+
+                <h3>Estoque por categoria</h3>
+
+                <div id="category-summary"></div>
+
+            </div>
+
+
+            <div class="dashboard-section">
+
+                <h3>Movimentações recentes</h3>
+
+                <div id="recent-history"></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             PRODUTOS
+        ========================== -->
+
+        <section id="produtos" class="section">
+
+            <div class="section-header">
+
+                <div>
+                    <h2>Produtos</h2>
+
+                    <p class="section-description">
+                        Consulte e gerencie os componentes cadastrados.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="filters">
+
+                <input
+                    id="search-input"
+                    type="search"
+                    placeholder="Pesquisar por nome, código ou categoria..."
+                >
+
+
+                <select id="category-filter">
+
+                    <option value="">
+                        Todas as categorias
+                    </option>
+
+                </select>
+
+
+                <select id="status-filter">
+
+                    <option value="">
+                        Todos os status
+                    </option>
+
+                    <option value="available">
+                        Disponível
+                    </option>
+
+                    <option value="low">
+                        Estoque baixo
+                    </option>
+
+                    <option value="empty">
+                        Sem estoque
+                    </option>
+
+                    <option value="borrowed">
+                        Emprestado
+                    </option>
+
+                </select>
+
+
+                <select id="sort-filter">
+
+                    <option value="name">
+                        Nome
+                    </option>
+
+                    <option value="quantity">
+                        Quantidade
+                    </option>
+
+                    <option value="category">
+                        Categoria
+                    </option>
+
+                    <option value="newest">
+                        Mais recentes
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- O JavaScript preenche este container dinamicamente. -->
+            <div id="product-list"></div>
+
+        </section>
+
+
+        <!-- =========================
+             ADICIONAR / EDITAR
+        ========================== -->
+
+        <section id="adicionar" class="section">
+
+            <h2 id="form-title">
+                Adicionar produto
+            </h2>
+
+            <p class="section-description">
+                Cadastre um novo componente no almoxarifado.
+            </p>
+
+
+            <form id="product-form">
+
+                <input
+                    type="hidden"
+                    id="editing-id"
+                >
+
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+
+                        <label for="name">
+                            Nome do componente
+                        </label>
+
+                        <input
+                            id="name"
+                            required
+                            placeholder="Ex.: Teclado USB"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="code">
+                            Código / patrimônio
+                        </label>
+
+                        <input
+                            id="code"
+                            required
+                            placeholder="Ex.: TEC-001"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="category">
+                            Categoria
+                        </label>
+
+                        <select
+                            id="category"
+                            required
+                        ></select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="quantity">
+                            Quantidade
+                        </label>
+
+                        <input
+                            id="quantity"
+                            required
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="minimum">
+                            Estoque mínimo
+                        </label>
+
+                        <input
+                            id="minimum"
+                            required
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="location">
+                            Localização
+                        </label>
+
+                        <input
+                            id="location"
+                            placeholder="Ex.: Armário A"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="description">
+                        Descrição
+                    </label>
+
+                    <textarea
+                        id="description"
+                        placeholder="Descrição do componente..."
+                    ></textarea>
+
+                </div>
+
+
+                <div class="form-actions">
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                    >
+                        Salvar produto
+                    </button>
+
+                    <button
+                        type="button"
+                        id="cancel-edit"
+                        class="secondary-button hidden"
+                    >
+                        Cancelar edição
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+        <!-- =========================
+             CATEGORIAS
+        ========================== -->
+
+        <section id="categorias" class="section">
+
+            <h2>Categorias</h2>
+
+            <p class="section-description">
+                Organize os componentes por categoria.
+            </p>
+
+
+            <form id="category-form" class="inline-form">
+
+                <input
+                    id="category-name"
+                    required
+                    placeholder="Nova categoria"
+                >
+
+                <button
+                    type="submit"
+                    class="primary-button"
+                >
+                    Adicionar categoria
+                </button>
+
+            </form>
+
+
+            <ul id="category-list"></ul>
+
+        </section>
+
+
+        <!-- =========================
+             EMPRÉSTIMOS
+        ========================== -->
+
+        <section id="emprestimos" class="section">
+
+            <h2>Empréstimos</h2>
+
+            <p class="section-description">
+                Consulte os componentes emprestados e registre devoluções.
+            </p>
+
+
+            <!-- Os cards de empréstimo são gerados pelo JavaScript. -->
+            <div id="loan-list"></div>
+
+        </section>
+
+
+        <!-- =========================
+             HISTÓRICO
+        ========================== -->
+
+        <section id="historico" class="section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <h2>Histórico</h2>
+
+                    <p class="section-description">
+                        Histórico de movimentações do almoxarifado.
+                    </p>
+
+                </div>
+
+
+                <button
+                    id="clear-history"
+                    class="danger-button"
+                >
+                    Limpar histórico
+                </button>
+
+            </div>
+
+
+            <!-- O histórico é uma lista dinâmica baseada em state.history. -->
+            <div id="history-list"></div>
+
+        </section>
+
+
+        <!-- =========================
+             SISTEMA
+        ========================== -->
+
+        <section id="sistema" class="section">
+
+            <h2>Sistema</h2>
+
+            <p class="section-description">
+                Ferramentas para exportar, importar e gerenciar os dados.
+            </p>
+
+
+            <div class="system-grid">
+
+
+                <!-- CSV -->
+
+                <div class="system-card">
+
+                    <div class="system-icon">
+                        📊
+                    </div>
+
+                    <h3>Exportar estoque</h3>
+
+                    <p>
+                        Exporte os produtos cadastrados em formato CSV.
+                    </p>
+
+                    <button
+                        id="export-csv"
+                        class="primary-button"
+                    >
+                        Exportar CSV
+                    </button>
+
+                </div>
+
+
+                <!-- BACKUP -->
+
+                <div class="system-card">
+
+                    <div class="system-icon">
+                        💾
+                    </div>
+
+                    <h3>Backup</h3>
+
+                    <p>
+                        Salve uma cópia completa dos dados do sistema.
+                    </p>
+
+                    <button
+                        id="export-backup"
+                        class="primary-button"
+                    >
+                        Criar backup
+                    </button>
+
+                </div>
+
+
+                <!-- RESTAURAR -->
+
+                <div class="system-card">
+
+                    <div class="system-icon">
+                        📂
+                    </div>
+
+                    <h3>Restaurar backup</h3>
+
+                    <p>
+                        Importe um backup JSON previamente salvo.
+                    </p>
+
+
+                    <div class="file-upload">
+
+                        <label
+                            for="import-backup"
+                            class="file-upload-button"
+                        >
+                            📂 Selecionar backup
+                        </label>
+
+
+                        <input
+                            type="file"
+                            id="import-backup"
+                            accept=".json"
+                        >
+
+
+                        <span id="file-name">
+                            Nenhum arquivo selecionado
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- APAGAR -->
+
+                <div class="system-card danger-card">
+
+                    <div class="system-icon">
+                        ⚠️
+                    </div>
+
+                    <h3>Apagar dados</h3>
+
+                    <p>
+                        Remove todos os produtos, empréstimos e histórico.
+                    </p>
+
+                    <button
+                        id="clear-data"
+                        class="danger-button"
+                    >
+                        Apagar todos os dados
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================
+         MODAL DE EMPRÉSTIMO
+    ========================== -->
+
+    <div
+        id="loan-modal"
+        class="modal hidden"
+    >
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h2>
+                    Registrar empréstimo
+                </h2>
+
+                <button
+                    id="close-modal"
+                    class="close-button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="loan-form">
+
+                <input
+                    type="hidden"
+                    id="loan-product-id"
+                >
+
+
+                <div class="form-group">
+
+                    <label for="borrower">
+                        Responsável
+                    </label>
+
+                    <input
+                        id="borrower"
+                        required
+                        placeholder="Nome do responsável"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="loan-quantity">
+                        Quantidade
+                    </label>
+
+                    <input
+                        id="loan-quantity"
+                        required
+                        type="number"
+                        min="1"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="loan-reason">
+                        Motivo
+                    </label>
+
+                    <input
+                        id="loan-reason"
+                        placeholder="Ex.: Aula, manutenção..."
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="loan-due-date">
+                        Data de devolução
+                    </label>
+
+                    <input
+                        id="loan-due-date"
+                        type="date"
+                    >
+
+                </div>
+
+
+                <div class="form-actions">
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                    >
+                        Confirmar empréstimo
+                    </button>
+
+                    <button
+                        type="button"
+                        id="cancel-loan"
+                        class="secondary-button"
+                    >
+                        Cancelar
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         TOAST
+    ========================== -->
+
+    <div id="toast-container"></div>
+
+
+    <!--
+         O JavaScript é carregado no final do body para que todos os elementos
+         HTML já existam quando o script começar a registrar os eventos.
+    -->
+    <script src="js/app.js"></script>
+
+</body>
+
+</html>
