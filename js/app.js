@@ -1,642 +1,1242 @@
-/* =====================================================
-   ALMOXARIFADO TECNOLÓGICO 2.0
-   Sistema de gerenciamento de estoque
+/* =========================================================
+   ALMOXARIFADO TECNOLÓGICO
+   Sistema de controle de estoque
+========================================================= */
 
-   Tecnologias:
-   - JavaScript
-   - HTML
-   - CSS
-   - LocalStorage
-===================================================== */
 
-/* =====================================================
+/* =========================================================
    CONFIGURAÇÕES
-===================================================== */
+========================================================= */
 
 const STORAGE_KEY = "almoxarifado_tecnologico_v4";
 
 const THEME_KEY = "almoxarifado_theme";
 
+
 const DEFAULT_CATEGORIES = [
-  "Computadores",
-  "Periféricos",
-  "Cabos e Adaptadores",
-  "Redes",
-  "Componentes",
-  "Armazenamento",
-  "Energia",
-  "Outros",
+
+    "Computadores",
+    "Periféricos",
+    "Cabos e Adaptadores",
+    "Redes",
+    "Componentes",
+    "Armazenamento",
+    "Energia",
+    "Outros"
+
 ];
 
-/* =====================================================
-   ESTADO DO SISTEMA
-===================================================== */
 
 let state = {
-  products: [],
 
-  categories: [...DEFAULT_CATEGORIES],
+    products: [],
 
-  loans: [],
+    categories: [
+        ...DEFAULT_CATEGORIES
+    ],
 
-  history: [],
+    loans: [],
+
+    history: []
+
 };
 
-/* =====================================================
-   INICIALIZAÇÃO
-===================================================== */
 
-document.addEventListener("DOMContentLoaded", initialize);
+/* =========================================================
+   UTILIDADES
+========================================================= */
 
-function initialize() {
-  loadData();
+function generateId() {
 
-  setupNavigation();
+    return Date.now().toString() +
+        Math.random()
+            .toString(36)
+            .substring(2, 9);
 
-  setupForms();
-
-  setupFilters();
-
-  setupSystemEvents();
-
-  setupTheme();
-
-  renderAll();
 }
 
-/* =====================================================
-   LOCAL STORAGE
-===================================================== */
 
-function loadData() {
-  const savedData = localStorage.getItem(STORAGE_KEY);
+function saveState() {
 
-  if (!savedData) {
-    saveData();
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(state)
+    );
 
-    return;
-  }
-
-  try {
-    const parsed = JSON.parse(savedData);
-
-    state = {
-      products: parsed.products || [],
-
-      categories: parsed.categories?.length
-        ? parsed.categories
-        : [...DEFAULT_CATEGORIES],
-
-      loans: parsed.loans || [],
-
-      history: parsed.history || [],
-    };
-  } catch (error) {
-    console.error("Erro ao carregar dados:", error);
-
-    showToast("Não foi possível carregar os dados.");
-  }
 }
 
-function saveData() {
-  localStorage.setItem(
-    STORAGE_KEY,
 
-    JSON.stringify(state),
-  );
+function loadState() {
+
+    const saved =
+        localStorage.getItem(STORAGE_KEY);
+
+    if (!saved) {
+
+        saveState();
+
+        return;
+    }
+
+
+    try {
+
+        const parsed =
+            JSON.parse(saved);
+
+
+        state = {
+
+            products:
+                Array.isArray(parsed.products)
+                    ? parsed.products
+                    : [],
+
+            categories:
+                Array.isArray(parsed.categories)
+                    ? parsed.categories
+                    : [...DEFAULT_CATEGORIES],
+
+            loans:
+                Array.isArray(parsed.loans)
+                    ? parsed.loans
+                    : [],
+
+            history:
+                Array.isArray(parsed.history)
+                    ? parsed.history
+                    : []
+
+        };
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao carregar dados:",
+            error
+        );
+
+        saveState();
+
+    }
+
 }
 
-/* =====================================================
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+function showToast(message) {
+
+    const container =
+        document.getElementById(
+            "toast-container"
+        );
+
+
+    const toast =
+        document.createElement("div");
+
+    toast.className = "toast";
+
+    toast.textContent = message;
+
+
+    container.appendChild(toast);
+
+
+    setTimeout(() => {
+
+        toast.remove();
+
+    }, 3000);
+
+}
+
+
+/* =========================================================
    NAVEGAÇÃO
-===================================================== */
+========================================================= */
 
 function setupNavigation() {
-  document.querySelectorAll("[data-section]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const sectionId = button.dataset.section;
 
-      if (!document.getElementById(sectionId)) {
-        return;
-      }
+    const buttons =
+        document.querySelectorAll(
+            "[data-section]"
+        );
 
-      showSection(sectionId);
+
+    buttons.forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const target =
+                    button.dataset.section;
+
+
+                document
+                    .querySelectorAll(".section")
+                    .forEach(section => {
+
+                        section.classList.remove(
+                            "active"
+                        );
+
+                    });
+
+
+                const targetSection =
+                    document.getElementById(
+                        target
+                    );
+
+
+                if (targetSection) {
+
+                    targetSection.classList.add(
+                        "active"
+                    );
+
+                }
+
+
+                buttons.forEach(btn => {
+
+                    btn.classList.remove(
+                        "active"
+                    );
+
+                });
+
+
+                button.classList.add(
+                    "active"
+                );
+
+            }
+        );
+
     });
-  });
+
+
+    const firstButton =
+        document.querySelector(
+            "[data-section='dashboard']"
+        );
+
+
+    if (firstButton) {
+
+        firstButton.classList.add(
+            "active"
+        );
+
+    }
+
 }
 
-function showSection(sectionId) {
-  document.querySelectorAll(".section").forEach((section) => {
-    section.classList.remove("active");
-  });
 
-  document.querySelectorAll(".nav-button").forEach((button) => {
-    button.classList.remove("active");
-  });
-
-  const section = document.getElementById(sectionId);
-
-  if (section) {
-    section.classList.add("active");
-  }
-
-  const navButton = document.querySelector(
-    `.nav-button[data-section="${sectionId}"]`,
-  );
-
-  if (navButton) {
-    navButton.classList.add("active");
-  }
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-}
-
-/* =====================================================
-   FORMULÁRIOS
-===================================================== */
-
-function setupForms() {
-  const productForm = document.getElementById("product-form");
-
-  const categoryForm = document.getElementById("category-form");
-
-  const loanForm = document.getElementById("loan-form");
-
-  productForm.addEventListener("submit", handleProductSubmit);
-
-  categoryForm.addEventListener("submit", addCategory);
-
-  loanForm.addEventListener("submit", handleLoanSubmit);
-
-  document.getElementById("cancel-edit").addEventListener("click", cancelEdit);
-
-  document
-    .getElementById("close-modal")
-    .addEventListener("click", closeLoanModal);
-
-  document
-    .getElementById("cancel-loan")
-    .addEventListener("click", closeLoanModal);
-}
-
-/* =====================================================
+/* =========================================================
    CATEGORIAS
-===================================================== */
+========================================================= */
 
 function renderCategories() {
-  const categorySelect = document.getElementById("category");
 
-  const categoryFilter = document.getElementById("category-filter");
+    const categorySelect =
+        document.getElementById(
+            "category"
+        );
 
-  const categoryList = document.getElementById("category-list");
 
-  const currentCategory = categorySelect.value;
+    const categoryFilter =
+        document.getElementById(
+            "category-filter"
+        );
 
-  const currentFilter = categoryFilter.value;
 
-  categorySelect.innerHTML = "";
+    const categoryList =
+        document.getElementById(
+            "category-list"
+        );
 
-  state.categories.forEach((category) => {
-    const option = document.createElement("option");
 
-    option.value = category;
+    if (categorySelect) {
 
-    option.textContent = category;
+        categorySelect.innerHTML = "";
 
-    categorySelect.appendChild(option);
-  });
+        state.categories.forEach(category => {
 
-  if (state.categories.includes(currentCategory)) {
-    categorySelect.value = currentCategory;
-  }
+            const option =
+                document.createElement("option");
 
-  categoryFilter.innerHTML = `
+            option.value = category;
 
-        <option value="">
-            Todas as categorias
-        </option>
+            option.textContent = category;
 
-    `;
+            categorySelect.appendChild(
+                option
+            );
 
-  state.categories.forEach((category) => {
-    const option = document.createElement("option");
+        });
 
-    option.value = category;
+    }
 
-    option.textContent = category;
 
-    categoryFilter.appendChild(option);
-  });
+    if (categoryFilter) {
 
-  if (state.categories.includes(currentFilter)) {
-    categoryFilter.value = currentFilter;
-  }
+        const currentValue =
+            categoryFilter.value;
 
-  categoryList.innerHTML = "";
 
-  state.categories.forEach((category) => {
-    const quantity = state.products.filter(
-      (product) => product.category === category,
-    ).length;
+        categoryFilter.innerHTML =
+            `<option value="">
+                Todas as categorias
+            </option>`;
 
-    const li = document.createElement("li");
 
-    li.className = "category-item";
+        state.categories.forEach(category => {
 
-    li.innerHTML = `
+            const option =
+                document.createElement("option");
 
-            <span>
-                🏷️ ${escapeHTML(category)}
-            </span>
+            option.value = category;
 
-            <span class="category-count">
-                ${quantity} produto(s)
-            </span>
+            option.textContent = category;
 
-        `;
+            categoryFilter.appendChild(
+                option
+            );
 
-    categoryList.appendChild(li);
-  });
+        });
+
+
+        categoryFilter.value =
+            currentValue;
+
+    }
+
+
+    if (categoryList) {
+
+        categoryList.innerHTML = "";
+
+
+        if (state.categories.length === 0) {
+
+            categoryList.innerHTML =
+                `<li class="empty-state">
+                    Nenhuma categoria cadastrada.
+                </li>`;
+
+            return;
+
+        }
+
+
+        state.categories.forEach(category => {
+
+            const li =
+                document.createElement("li");
+
+            li.className =
+                "category-list-item";
+
+
+            const name =
+                document.createElement("span");
+
+            name.textContent =
+                category;
+
+
+            const button =
+                document.createElement("button");
+
+            button.className =
+                "danger-button";
+
+            button.textContent =
+                "Excluir";
+
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    deleteCategory(category);
+
+                }
+            );
+
+
+            li.appendChild(name);
+
+            li.appendChild(button);
+
+            categoryList.appendChild(li);
+
+        });
+
+    }
+
 }
 
-function addCategory(event) {
-  event.preventDefault();
 
-  const input = document.getElementById("category-name");
+/* =========================================================
+   ADICIONAR CATEGORIA
+========================================================= */
 
-  const name = input.value.trim();
+function setupCategoryForm() {
 
-  if (!name) {
-    return;
-  }
+    const form =
+        document.getElementById(
+            "category-form"
+        );
 
-  const exists = state.categories.some(
-    (category) => category.toLowerCase() === name.toLowerCase(),
-  );
 
-  if (exists) {
-    showToast("Essa categoria já existe.");
+    form.addEventListener(
+        "submit",
+        event => {
 
-    return;
-  }
+            event.preventDefault();
 
-  state.categories.push(name);
 
-  saveData();
+            const input =
+                document.getElementById(
+                    "category-name"
+                );
 
-  renderAll();
 
-  input.value = "";
+            const name =
+                input.value.trim();
 
-  showToast("Categoria adicionada com sucesso!");
+
+            if (!name) {
+
+                return;
+
+            }
+
+
+            const exists =
+                state.categories.some(
+                    category =>
+                        category.toLowerCase() ===
+                        name.toLowerCase()
+                );
+
+
+            if (exists) {
+
+                showToast(
+                    "Essa categoria já existe."
+                );
+
+                return;
+
+            }
+
+
+            state.categories.push(name);
+
+            saveState();
+
+            input.value = "";
+
+            renderAll();
+
+            showToast(
+                "Categoria adicionada."
+            );
+
+        }
+    );
+
 }
 
-/* =====================================================
+
+function deleteCategory(category) {
+
+    const used =
+        state.products.some(
+            product =>
+                product.category === category
+        );
+
+
+    if (used) {
+
+        showToast(
+            "Não é possível excluir uma categoria que possui produtos."
+        );
+
+        return;
+
+    }
+
+
+    const confirmed =
+        confirm(
+            `Deseja excluir a categoria "${category}"?`
+        );
+
+
+    if (!confirmed) {
+
+        return;
+
+    }
+
+
+    state.categories =
+        state.categories.filter(
+            item => item !== category
+        );
+
+
+    saveState();
+
+    renderAll();
+
+    showToast(
+        "Categoria excluída."
+    );
+
+}
+
+
+/* =========================================================
+   HISTÓRICO
+========================================================= */
+
+function addHistory(
+    type,
+    message
+) {
+
+    state.history.unshift({
+
+        id: generateId(),
+
+        type,
+
+        message,
+
+        date:
+            new Date().toISOString()
+
+    });
+
+
+    /*
+       Mantém somente as 200
+       movimentações mais recentes.
+    */
+
+    state.history =
+        state.history.slice(0, 200);
+
+}
+
+
+/* =========================================================
    PRODUTOS
-===================================================== */
+========================================================= */
 
-function handleProductSubmit(event) {
-  event.preventDefault();
+function setupProductForm() {
 
-  const editingId = document.getElementById("editing-id").value;
+    const form =
+        document.getElementById(
+            "product-form"
+        );
 
-  const name = document.getElementById("name").value.trim();
 
-  const code = document.getElementById("code").value.trim();
+    form.addEventListener(
+        "submit",
+        event => {
 
-  const category = document.getElementById("category").value;
+            event.preventDefault();
 
-  const quantity = Number(document.getElementById("quantity").value);
 
-  const minimum = Number(document.getElementById("minimum").value);
+            const editingId =
+                document.getElementById(
+                    "editing-id"
+                ).value;
 
-  const location = document.getElementById("location").value.trim();
 
-  const description = document.getElementById("description").value.trim();
+            const name =
+                document.getElementById(
+                    "name"
+                ).value.trim();
 
-  if (quantity < 0 || minimum < 0) {
-    showToast("Quantidade inválida.");
 
-    return;
-  }
+            const code =
+                document.getElementById(
+                    "code"
+                ).value.trim();
 
-  const duplicatedCode = state.products.find(
-    (product) =>
-      product.code.toLowerCase() === code.toLowerCase() &&
-      product.id !== editingId,
-  );
 
-  if (duplicatedCode) {
-    showToast("Já existe um produto com esse código.");
+            const category =
+                document.getElementById(
+                    "category"
+                ).value;
 
-    return;
-  }
 
-  if (editingId) {
-    editExistingProduct(editingId, {
-      name,
-      code,
-      category,
-      quantity,
-      minimum,
-      location,
-      description,
-    });
-  } else {
-    createProduct({
-      name,
-      code,
-      category,
-      quantity,
-      minimum,
-      location,
-      description,
-    });
-  }
+            const quantity =
+                Number(
+                    document.getElementById(
+                        "quantity"
+                    ).value
+                );
+
+
+            const minimum =
+                Number(
+                    document.getElementById(
+                        "minimum"
+                    ).value
+                );
+
+
+            const location =
+                document.getElementById(
+                    "location"
+                ).value.trim();
+
+
+            const description =
+                document.getElementById(
+                    "description"
+                ).value.trim();
+
+
+            if (
+                !name ||
+                !code ||
+                !category ||
+                quantity < 0 ||
+                minimum < 0
+            ) {
+
+                showToast(
+                    "Preencha os campos corretamente."
+                );
+
+                return;
+
+            }
+
+
+            const duplicatedCode =
+                state.products.some(
+                    product =>
+                        product.code.toLowerCase() ===
+                        code.toLowerCase() &&
+                        product.id !== editingId
+                );
+
+
+            if (duplicatedCode) {
+
+                showToast(
+                    "Já existe um produto com esse código."
+                );
+
+                return;
+
+            }
+
+
+            if (editingId) {
+
+                editProduct(
+                    editingId,
+                    {
+                        name,
+                        code,
+                        category,
+                        quantity,
+                        minimum,
+                        location,
+                        description
+                    }
+                );
+
+            } else {
+
+                const product = {
+
+                    id: generateId(),
+
+                    name,
+
+                    code,
+
+                    category,
+
+                    quantity,
+
+                    minimum,
+
+                    location,
+
+                    description,
+
+                    createdAt:
+                        new Date().toISOString()
+
+                };
+
+
+                state.products.push(
+                    product
+                );
+
+
+                addHistory(
+                    "create",
+                    `Produto "${name}" foi cadastrado.`
+                );
+
+            }
+
+
+            saveState();
+
+            resetProductForm();
+
+            renderAll();
+
+            showToast(
+                editingId
+                    ? "Produto atualizado."
+                    : "Produto cadastrado."
+            );
+
+        }
+    );
+
+
+    document
+        .getElementById("cancel-edit")
+        .addEventListener(
+            "click",
+            resetProductForm
+        );
+
 }
 
-function createProduct(data) {
-  const product = {
-    id: generateId(),
 
-    name: data.name,
+function editProduct(
+    id,
+    data
+) {
 
-    code: data.code,
+    const product =
+        state.products.find(
+            item => item.id === id
+        );
 
-    category: data.category,
 
-    quantity: data.quantity,
+    if (!product) {
 
-    minimum: data.minimum,
+        return;
 
-    location: data.location,
+    }
 
-    description: data.description,
 
-    createdAt: new Date().toISOString(),
-  };
+    const oldQuantity =
+        product.quantity;
 
-  state.products.push(product);
 
-  addHistory({
-    type: "create",
+    Object.assign(
+        product,
+        data
+    );
 
-    message: `Produto "${product.name}" foi cadastrado.`,
 
-    productId: product.id,
-  });
+    addHistory(
+        "edit",
+        `Produto "${product.name}" foi atualizado.`
+    );
 
-  saveData();
 
-  renderAll();
+    if (
+        oldQuantity !==
+        product.quantity
+    ) {
 
-  resetProductForm();
+        addHistory(
+            "stock",
+            `Estoque de "${product.name}" alterado de ${oldQuantity} para ${product.quantity}.`
+        );
 
-  showToast("Produto cadastrado com sucesso!");
+    }
 
-  showSection("produtos");
 }
 
-function editExistingProduct(id, data) {
-  const product = state.products.find((item) => item.id === id);
 
-  if (!product) {
-    return;
-  }
+function startEditProduct(id) {
 
-  const oldQuantity = product.quantity;
+    const product =
+        state.products.find(
+            item => item.id === id
+        );
 
-  product.name = data.name;
 
-  product.code = data.code;
+    if (!product) {
 
-  product.category = data.category;
+        return;
 
-  product.quantity = data.quantity;
+    }
 
-  product.minimum = data.minimum;
 
-  product.location = data.location;
+    document.getElementById(
+        "editing-id"
+    ).value = product.id;
 
-  product.description = data.description;
 
-  addHistory({
-    type: "edit",
+    document.getElementById(
+        "name"
+    ).value = product.name;
 
-    message: `Produto "${product.name}" foi atualizado.`,
 
-    productId: product.id,
-  });
+    document.getElementById(
+        "code"
+    ).value = product.code;
 
-  if (oldQuantity !== product.quantity) {
-    addHistory({
-      type: "stock",
 
-      message: `Estoque de "${product.name}" alterado de ${oldQuantity} para ${product.quantity}.`,
+    document.getElementById(
+        "category"
+    ).value = product.category;
 
-      productId: product.id,
-    });
-  }
 
-  saveData();
+    document.getElementById(
+        "quantity"
+    ).value = product.quantity;
 
-  renderAll();
 
-  resetProductForm();
+    document.getElementById(
+        "minimum"
+    ).value = product.minimum;
 
-  showToast("Produto atualizado com sucesso!");
 
-  showSection("produtos");
+    document.getElementById(
+        "location"
+    ).value = product.location || "";
+
+
+    document.getElementById(
+        "description"
+    ).value =
+        product.description || "";
+
+
+    document.getElementById(
+        "form-title"
+    ).textContent =
+        "Editar produto";
+
+
+    document.getElementById(
+        "cancel-edit"
+    ).classList.remove(
+        "hidden"
+    );
+
+
+    document
+        .querySelector(
+            "[data-section='adicionar']"
+        )
+        .click();
+
 }
 
-function editProduct(id) {
-  const product = state.products.find((item) => item.id === id);
-
-  if (!product) {
-    return;
-  }
-
-  document.getElementById("editing-id").value = product.id;
-
-  document.getElementById("name").value = product.name;
-
-  document.getElementById("code").value = product.code;
-
-  document.getElementById("category").value = product.category;
-
-  document.getElementById("quantity").value = product.quantity;
-
-  document.getElementById("minimum").value = product.minimum;
-
-  document.getElementById("location").value = product.location || "";
-
-  document.getElementById("description").value = product.description || "";
-
-  document.getElementById("form-title").textContent = "Editar produto";
-
-  document.getElementById("cancel-edit").classList.remove("hidden");
-
-  showSection("adicionar");
-}
-
-function cancelEdit() {
-  resetProductForm();
-}
 
 function resetProductForm() {
-  document.getElementById("product-form").reset();
 
-  document.getElementById("editing-id").value = "";
+    const form =
+        document.getElementById(
+            "product-form"
+        );
 
-  document.getElementById("form-title").textContent = "Adicionar produto";
 
-  document.getElementById("cancel-edit").classList.add("hidden");
+    form.reset();
+
+
+    document.getElementById(
+        "editing-id"
+    ).value = "";
+
+
+    document.getElementById(
+        "form-title"
+    ).textContent =
+        "Adicionar produto";
+
+
+    document.getElementById(
+        "cancel-edit"
+    ).classList.add(
+        "hidden"
+    );
+
 }
 
-function removeProduct(id) {
-  const product = state.products.find((item) => item.id === id);
 
-  if (!product) {
-    return;
-  }
+function deleteProduct(id) {
 
-  const confirmDelete = confirm(`Deseja realmente excluir "${product.name}"?`);
+    const product =
+        state.products.find(
+            item => item.id === id
+        );
 
-  if (!confirmDelete) {
-    return;
-  }
 
-  const hasLoan = state.loans.some(
-    (loan) => loan.productId === id && !loan.returned,
-  );
+    if (!product) {
 
-  if (hasLoan) {
-    showToast("Esse produto possui empréstimos ativos.");
+        return;
 
-    return;
-  }
+    }
 
-  state.products = state.products.filter((item) => item.id !== id);
 
-  addHistory({
-    type: "delete",
+    const activeLoan =
+        state.loans.some(
+            loan =>
+                loan.productId === id &&
+                loan.status === "active"
+        );
 
-    message: `Produto "${product.name}" foi removido.`,
 
-    productId: id,
-  });
+    if (activeLoan) {
 
-  saveData();
+        showToast(
+            "Não é possível excluir um produto com empréstimo ativo."
+        );
 
-  renderAll();
+        return;
 
-  showToast("Produto removido.");
+    }
+
+
+    const confirmed =
+        confirm(
+            `Deseja excluir "${product.name}"?`
+        );
+
+
+    if (!confirmed) {
+
+        return;
+
+    }
+
+
+    state.products =
+        state.products.filter(
+            item => item.id !== id
+        );
+
+
+    addHistory(
+        "delete",
+        `Produto "${product.name}" foi removido do estoque.`
+    );
+
+
+    saveState();
+
+    renderAll();
+
+    showToast(
+        "Produto removido."
+    );
+
 }
 
-/* =====================================================
-   RENDERIZAÇÃO DE PRODUTOS
-===================================================== */
+
+/* =========================================================
+   STATUS DO PRODUTO
+========================================================= */
+
+function getProductStatus(product) {
+
+    const borrowed =
+        getBorrowedQuantity(
+            product.id
+        );
+
+
+    if (product.quantity <= 0) {
+
+        return {
+            label: "Sem estoque",
+            className: "status-empty"
+        };
+
+    }
+
+
+    if (borrowed > 0) {
+
+        return {
+            label: "Emprestado",
+            className: "status-borrowed"
+        };
+
+    }
+
+
+    if (
+        product.quantity <=
+        product.minimum
+    ) {
+
+        return {
+            label: "Estoque baixo",
+            className: "status-low"
+        };
+
+    }
+
+
+    return {
+
+        label: "Disponível",
+
+        className:
+            "status-available"
+
+    };
+
+}
+
+
+function getBorrowedQuantity(
+    productId
+) {
+
+    return state.loans
+        .filter(
+            loan =>
+                loan.productId === productId &&
+                loan.status === "active"
+        )
+        .reduce(
+            (
+                total,
+                loan
+            ) =>
+                total +
+                Number(loan.quantity),
+            0
+        );
+
+}
+
+
+/* =========================================================
+   RENDER PRODUTOS
+========================================================= */
 
 function renderProducts() {
-  const container = document.getElementById("product-list");
 
-  const search = document
-    .getElementById("search-input")
-    .value.trim()
-    .toLowerCase();
+    const container =
+        document.getElementById(
+            "product-list"
+        );
 
-  const category = document.getElementById("category-filter").value;
 
-  const status = document.getElementById("status-filter").value;
+    const search =
+        document.getElementById(
+            "search-input"
+        ).value
+            .toLowerCase()
+            .trim();
 
-  const sort = document.getElementById("sort-filter").value;
 
-  let products = [...state.products];
+    const category =
+        document.getElementById(
+            "category-filter"
+        ).value;
 
-  products = products.filter((product) => {
-    const matchesSearch =
-      !search ||
-      product.name.toLowerCase().includes(search) ||
-      product.code.toLowerCase().includes(search) ||
-      product.category.toLowerCase().includes(search);
 
-    const matchesCategory = !category || product.category === category;
+    const status =
+        document.getElementById(
+            "status-filter"
+        ).value;
 
-    const available = getAvailableQuantity(product);
 
-    const matchesStatus =
-      !status ||
-      (status === "available" &&
-        available > 0 &&
-        product.quantity > product.minimum) ||
-      (status === "low" && available > 0 && available <= product.minimum) ||
-      (status === "empty" && available <= 0) ||
-      (status === "borrowed" && product.quantity > available);
+    const sort =
+        document.getElementById(
+            "sort-filter"
+        ).value;
 
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
 
-  sortProducts(products, sort);
+    let products =
+        [...state.products];
 
-  container.innerHTML = "";
 
-  if (!products.length) {
-    container.innerHTML = `
+    products =
+        products.filter(product => {
 
-            <div class="empty">
+            const matchesSearch =
+                !search ||
+                product.name
+                    .toLowerCase()
+                    .includes(search) ||
+                product.code
+                    .toLowerCase()
+                    .includes(search) ||
+                product.category
+                    .toLowerCase()
+                    .includes(search);
 
-                📦
 
-                <br><br>
+            const matchesCategory =
+                !category ||
+                product.category === category;
 
+
+            const productStatus =
+                getProductStatus(product);
+
+
+            let matchesStatus = true;
+
+
+            if (status === "available") {
+
+                matchesStatus =
+                    productStatus.className ===
+                    "status-available";
+
+            }
+
+
+            if (status === "low") {
+
+                matchesStatus =
+                    productStatus.className ===
+                    "status-low";
+
+            }
+
+
+            if (status === "empty") {
+
+                matchesStatus =
+                    productStatus.className ===
+                    "status-empty";
+
+            }
+
+
+            if (status === "borrowed") {
+
+                matchesStatus =
+                    getBorrowedQuantity(
+                        product.id
+                    ) > 0;
+
+            }
+
+
+            return (
+                matchesSearch &&
+                matchesCategory &&
+                matchesStatus
+            );
+
+        });
+
+
+    /* Ordenação */
+
+    if (sort === "name") {
+
+        products.sort(
+            (a, b) =>
+                a.name.localeCompare(
+                    b.name
+                )
+        );
+
+    }
+
+
+    if (sort === "quantity") {
+
+        products.sort(
+            (a, b) =>
+                b.quantity -
+                a.quantity
+        );
+
+    }
+
+
+    if (sort === "category") {
+
+        products.sort(
+            (a, b) =>
+                a.category.localeCompare(
+                    b.category
+                )
+        );
+
+    }
+
+
+    if (sort === "newest") {
+
+        products.sort(
+            (a, b) =>
+                new Date(b.createdAt) -
+                new Date(a.createdAt)
+        );
+
+    }
+
+
+    container.innerHTML = "";
+
+
+    if (products.length === 0) {
+
+        container.innerHTML =
+            `<div class="empty-state">
                 Nenhum produto encontrado.
+            </div>`;
 
-            </div>
+        return;
 
-        `;
+    }
 
-    return;
-  }
 
-  products.forEach((product) => {
-    container.appendChild(createProductCard(product));
-  });
-}
+    products.forEach(product => {
 
-function sortProducts(products, sort) {
-  if (sort === "name") {
-    products.sort((a, b) => a.name.localeCompare(b.name));
-  }
+        const borrowed =
+            getBorrowedQuantity(
+                product.id
+            );
 
-  if (sort === "quantity") {
-    products.sort((a, b) => b.quantity - a.quantity);
-  }
 
-  if (sort === "category") {
-    products.sort((a, b) => a.category.localeCompare(b.category));
-  }
+        const status =
+            getProductStatus(product);
 
-  if (sort === "newest") {
-    products.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  }
-}
 
-function createProductCard(product) {
-  const card = document.createElement("div");
+        const card =
+            document.createElement("div");
 
-  card.className = "product-card";
+        card.className =
+            "product-card";
 
-  const available = getAvailableQuantity(product);
 
-  const borrowed = product.quantity - available;
-
-  const status = getProductStatus(product);
-
-  card.innerHTML = `
-
-        <div class="product-header">
+        card.innerHTML = `
 
             <div>
 
@@ -645,738 +1245,913 @@ function createProductCard(product) {
                 </h3>
 
                 <div class="product-code">
+                    Código:
                     ${escapeHTML(product.code)}
                 </div>
 
             </div>
 
-            <span class="badge ${status.class}">
-                ${status.text}
+
+            <span
+                class="product-status ${status.className}"
+            >
+                ${status.label}
             </span>
 
-        </div>
 
+            <div class="product-info">
 
-        <div class="product-info">
-
-            <div class="info-row">
-
-                <span>Categoria</span>
-
-                <strong>
+                <div>
+                    <strong>Categoria</strong><br>
                     ${escapeHTML(product.category)}
-                </strong>
+                </div>
 
-            </div>
+                <div>
+                    <strong>Quantidade</strong><br>
+                    ${product.quantity}
+                </div>
 
-
-            <div class="info-row">
-
-                <span>Disponível</span>
-
-                <strong>
-                    ${available}
-                </strong>
-
-            </div>
-
-
-            <div class="info-row">
-
-                <span>Emprestados</span>
-
-                <strong>
+                <div>
+                    <strong>Emprestados</strong><br>
                     ${borrowed}
-                </strong>
+                </div>
+
+                <div>
+                    <strong>Localização</strong><br>
+                    ${escapeHTML(
+                        product.location || "Não informado"
+                    )}
+                </div>
 
             </div>
 
 
-            <div class="info-row">
+            ${
+                product.description
+                    ? `
+                    <div class="product-description">
+                        ${escapeHTML(
+                            product.description
+                        )}
+                    </div>
+                    `
+                    : ""
+            }
 
-                <span>Estoque mínimo</span>
 
-                <strong>
-                    ${product.minimum}
-                </strong>
+            <div class="product-actions">
+
+                <button
+                    class="primary-button"
+                    data-action="borrow"
+                    data-id="${product.id}"
+                >
+                    Emprestar
+                </button>
+
+
+                <button
+                    class="secondary-button"
+                    data-action="edit"
+                    data-id="${product.id}"
+                >
+                    Editar
+                </button>
+
+
+                <button
+                    class="danger-button"
+                    data-action="delete"
+                    data-id="${product.id}"
+                >
+                    Excluir
+                </button>
 
             </div>
 
-
-            <div class="info-row">
-
-                <span>Localização</span>
-
-                <strong>
-                    ${escapeHTML(product.location || "Não informado")}
-                </strong>
-
-            </div>
-
-        </div>
+        `;
 
 
-        ${
-          product.description
-            ? `
-                    <p class="product-description">
-                        ${escapeHTML(product.description)}
-                    </p>
-                `
-            : ""
-        }
+        card
+            .querySelector(
+                "[data-action='borrow']"
+            )
+            .addEventListener(
+                "click",
+                () =>
+                    openLoanModal(
+                        product.id
+                    )
+            );
 
 
-        <div class="product-actions">
-
-            <button
-                class="borrow-button"
-                onclick="openLoanModal('${product.id}')"
-                ${available <= 0 ? "disabled" : ""}
-            >
-                📤 Emprestar
-            </button>
-
-
-            <button
-                class="edit-button"
-                onclick="editProduct('${product.id}')"
-            >
-                ✏️ Editar
-            </button>
+        card
+            .querySelector(
+                "[data-action='edit']"
+            )
+            .addEventListener(
+                "click",
+                () =>
+                    startEditProduct(
+                        product.id
+                    )
+            );
 
 
-            <button
-                class="delete-button"
-                onclick="removeProduct('${product.id}')"
-            >
-                🗑️ Excluir
-            </button>
+        card
+            .querySelector(
+                "[data-action='delete']"
+            )
+            .addEventListener(
+                "click",
+                () =>
+                    deleteProduct(
+                        product.id
+                    )
+            );
 
-        </div>
 
-    `;
+        container.appendChild(card);
 
-  return card;
+    });
+
 }
 
-/* =====================================================
-   STATUS DO PRODUTO
-===================================================== */
 
-function getProductStatus(product) {
-  const available = getAvailableQuantity(product);
-
-  if (available <= 0) {
-    return {
-      text: "Esgotado",
-
-      class: "badge-danger",
-    };
-  }
-
-  if (available <= product.minimum) {
-    return {
-      text: "Estoque baixo",
-
-      class: "badge-warning",
-    };
-  }
-
-  return {
-    text: "Disponível",
-
-    class: "badge-success",
-  };
-}
-
-/* =====================================================
-   QUANTIDADE DISPONÍVEL
-===================================================== */
-
-function getAvailableQuantity(product) {
-  const borrowed = state.loans
-    .filter((loan) => loan.productId === product.id && !loan.returned)
-    .reduce((total, loan) => total + loan.quantity, 0);
-
-  return Math.max(0, product.quantity - borrowed);
-}
-
-/* =====================================================
+/* =========================================================
    EMPRÉSTIMOS
-===================================================== */
+========================================================= */
 
 function openLoanModal(productId) {
-  const product = state.products.find((item) => item.id === productId);
 
-  if (!product) {
-    return;
-  }
+    const product =
+        state.products.find(
+            item => item.id === productId
+        );
 
-  const available = getAvailableQuantity(product);
 
-  if (available <= 0) {
-    showToast("Não há unidades disponíveis.");
+    if (!product) {
 
-    return;
-  }
+        return;
 
-  document.getElementById("loan-product-id").value = productId;
+    }
 
-  document.getElementById("loan-quantity").value = 1;
 
-  document.getElementById("loan-quantity").max = available;
+    const available =
+        product.quantity;
 
-  document.getElementById("borrower").value = "";
 
-  document.getElementById("loan-reason").value = "";
+    if (available <= 0) {
 
-  const date = new Date();
+        showToast(
+            "Esse produto está sem estoque."
+        );
 
-  date.setDate(date.getDate() + 7);
+        return;
 
-  document.getElementById("loan-due-date").value = formatDateForInput(date);
+    }
 
-  document.getElementById("loan-modal").classList.remove("hidden");
+
+    document.getElementById(
+        "loan-product-id"
+    ).value = productId;
+
+
+    document.getElementById(
+        "loan-quantity"
+    ).value = 1;
+
+
+    document.getElementById(
+        "loan-quantity"
+    ).max = available;
+
+
+    document.getElementById(
+        "borrower"
+    ).value = "";
+
+
+    document.getElementById(
+        "loan-reason"
+    ).value = "";
+
+
+    document.getElementById(
+        "loan-due-date"
+    ).value = "";
+
+
+    document
+        .getElementById("loan-modal")
+        .classList.remove("hidden");
+
 }
+
 
 function closeLoanModal() {
-  document.getElementById("loan-modal").classList.add("hidden");
+
+    document
+        .getElementById("loan-modal")
+        .classList.add("hidden");
+
 }
 
-function handleLoanSubmit(event) {
-  event.preventDefault();
 
-  const productId = document.getElementById("loan-product-id").value;
+function setupLoanForm() {
 
-  const borrower = document.getElementById("borrower").value.trim();
+    document
+        .getElementById("loan-form")
+        .addEventListener(
+            "submit",
+            event => {
 
-  const quantity = Number(document.getElementById("loan-quantity").value);
+                event.preventDefault();
 
-  const reason = document.getElementById("loan-reason").value.trim();
 
-  const dueDate = document.getElementById("loan-due-date").value;
+                const productId =
+                    document.getElementById(
+                        "loan-product-id"
+                    ).value;
 
-  const product = state.products.find((item) => item.id === productId);
 
-  if (!product) {
-    return;
-  }
+                const borrower =
+                    document.getElementById(
+                        "borrower"
+                    ).value.trim();
 
-  const available = getAvailableQuantity(product);
 
-  if (quantity <= 0 || quantity > available) {
-    showToast("Quantidade de empréstimo inválida.");
+                const quantity =
+                    Number(
+                        document.getElementById(
+                            "loan-quantity"
+                        ).value
+                    );
 
-    return;
-  }
 
-  const loan = {
-    id: generateId(),
+                const reason =
+                    document.getElementById(
+                        "loan-reason"
+                    ).value.trim();
 
-    productId,
 
-    borrower,
+                const dueDate =
+                    document.getElementById(
+                        "loan-due-date"
+                    ).value;
 
-    quantity,
 
-    reason,
+                const product =
+                    state.products.find(
+                        item =>
+                            item.id === productId
+                    );
 
-    dueDate,
 
-    loanDate: new Date().toISOString(),
+                if (!product) {
 
-    returned: false,
+                    return;
 
-    returnedAt: null,
-  };
+                }
 
-  state.loans.push(loan);
 
-  addHistory({
-    type: "loan",
+                if (
+                    quantity <= 0 ||
+                    quantity > product.quantity
+                ) {
 
-    message: `${quantity} unidade(s) de "${product.name}" foram emprestadas para ${borrower}.`,
+                    showToast(
+                        "Quantidade inválida."
+                    );
 
-    productId,
-  });
+                    return;
 
-  saveData();
+                }
 
-  renderAll();
 
-  closeLoanModal();
+                const loan = {
 
-  showToast("Empréstimo registrado!");
+                    id: generateId(),
+
+                    productId,
+
+                    productName:
+                        product.name,
+
+                    borrower,
+
+                    quantity,
+
+                    reason,
+
+                    dueDate,
+
+                    status: "active",
+
+                    createdAt:
+                        new Date().toISOString()
+
+                };
+
+
+                product.quantity -= quantity;
+
+
+                state.loans.push(
+                    loan
+                );
+
+
+                addHistory(
+                    "loan",
+                    `${quantity} unidade(s) de "${product.name}" foram emprestadas para ${borrower}.`
+                );
+
+
+                saveState();
+
+                closeLoanModal();
+
+                renderAll();
+
+                showToast(
+                    "Empréstimo registrado."
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById("close-modal")
+        .addEventListener(
+            "click",
+            closeLoanModal
+        );
+
+
+    document
+        .getElementById("cancel-loan")
+        .addEventListener(
+            "click",
+            closeLoanModal
+        );
+
+
+    document
+        .getElementById("loan-modal")
+        .addEventListener(
+            "click",
+            event => {
+
+                if (
+                    event.target.id ===
+                    "loan-modal"
+                ) {
+
+                    closeLoanModal();
+
+                }
+
+            }
+        );
+
 }
+
 
 function returnLoan(loanId) {
-  const loan = state.loans.find((item) => item.id === loanId);
 
-  if (!loan || loan.returned) {
-    return;
-  }
+    const loan =
+        state.loans.find(
+            item =>
+                item.id === loanId
+        );
 
-  const product = state.products.find((item) => item.id === loan.productId);
 
-  loan.returned = true;
+    if (
+        !loan ||
+        loan.status !== "active"
+    ) {
 
-  loan.returnedAt = new Date().toISOString();
+        return;
 
-  addHistory({
-    type: "return",
+    }
 
-    message: `${loan.quantity} unidade(s) de "${product?.name || "produto"}" foram devolvidas por ${loan.borrower}.`,
 
-    productId: loan.productId,
-  });
+    const product =
+        state.products.find(
+            item =>
+                item.id === loan.productId
+        );
 
-  saveData();
 
-  renderAll();
+    if (product) {
 
-  showToast("Produto devolvido com sucesso!");
+        product.quantity +=
+            Number(loan.quantity);
+
+    }
+
+
+    loan.status =
+        "returned";
+
+
+    loan.returnedAt =
+        new Date().toISOString();
+
+
+    addHistory(
+        "return",
+        `${loan.quantity} unidade(s) de "${loan.productName}" foram devolvidas por ${loan.borrower}.`
+    );
+
+
+    saveState();
+
+    renderAll();
+
+    showToast(
+        "Devolução registrada."
+    );
+
 }
 
-/* =====================================================
-   RENDERIZAÇÃO DOS EMPRÉSTIMOS
-===================================================== */
+
+/* =========================================================
+   STATUS DO EMPRÉSTIMO
+========================================================= */
+
+function getLoanStatus(loan) {
+
+    if (loan.status === "returned") {
+
+        return {
+
+            label: "Devolvido",
+
+            className:
+                "status-available"
+
+        };
+
+    }
+
+
+    if (!loan.dueDate) {
+
+        return {
+
+            label: "Sem prazo",
+
+            className:
+                "status-borrowed"
+
+        };
+
+    }
+
+
+    const today =
+        new Date();
+
+
+    today.setHours(
+        0, 0, 0, 0
+    );
+
+
+    const due =
+        new Date(
+            `${loan.dueDate}T00:00:00`
+        );
+
+
+    const diff =
+        Math.ceil(
+            (
+                due - today
+            ) /
+            (1000 * 60 * 60 * 24)
+        );
+
+
+    if (diff < 0) {
+
+        return {
+
+            label: "Atrasado",
+
+            className:
+                "status-empty"
+
+        };
+
+    }
+
+
+    if (diff <= 2) {
+
+        return {
+
+            label: "Devolução próxima",
+
+            className:
+                "status-low"
+
+        };
+
+    }
+
+
+    return {
+
+        label: "No prazo",
+
+        className:
+            "status-available"
+
+    };
+
+}
+
+
+/* =========================================================
+   RENDER EMPRÉSTIMOS
+========================================================= */
 
 function renderLoans() {
-  const container = document.getElementById("loan-list");
 
-  const activeLoans = state.loans.filter((loan) => !loan.returned);
+    const container =
+        document.getElementById(
+            "loan-list"
+        );
 
-  const returnedLoans = state.loans.filter((loan) => loan.returned);
 
-  container.innerHTML = "";
+    container.innerHTML = "";
 
-  if (!state.loans.length) {
-    container.innerHTML = `
 
-            <div class="empty">
+    const loans =
+        [...state.loans]
+            .sort(
+                (a, b) =>
+                    new Date(b.createdAt) -
+                    new Date(a.createdAt)
+            );
 
-                📤
 
-                <br><br>
+    if (loans.length === 0) {
 
+        container.innerHTML =
+            `<div class="empty-state">
                 Nenhum empréstimo registrado.
+            </div>`;
 
-            </div>
+        return;
 
-        `;
+    }
 
-    return;
-  }
 
-  if (activeLoans.length) {
-    const title = document.createElement("h3");
+    loans.forEach(loan => {
 
-    title.textContent = "Empréstimos ativos";
+        const status =
+            getLoanStatus(loan);
 
-    title.style.marginBottom = "15px";
 
-    container.appendChild(title);
+        const card =
+            document.createElement("div");
 
-    activeLoans.forEach((loan) => {
-      container.appendChild(createLoanCard(loan));
-    });
-  }
+        card.className =
+            "loan-card";
 
-  if (returnedLoans.length) {
-    const title = document.createElement("h3");
 
-    title.textContent = "Empréstimos devolvidos";
+        const dueText =
+            loan.dueDate
+                ? formatDate(loan.dueDate)
+                : "Sem prazo definido";
 
-    title.style.margin = "30px 0 15px";
 
-    container.appendChild(title);
+        card.innerHTML = `
 
-    returnedLoans
-      .slice()
-      .reverse()
-      .forEach((loan) => {
-        container.appendChild(createLoanCard(loan));
-      });
-  }
-}
+            <div class="loan-card-header">
 
-function createLoanCard(loan) {
-  const product = state.products.find((item) => item.id === loan.productId);
+                <div>
 
-  const card = document.createElement("div");
+                    <h3>
+                        ${escapeHTML(
+                            loan.productName
+                        )}
+                    </h3>
 
-  const overdue = !loan.returned && isOverdue(loan.dueDate);
+                    <div class="loan-info">
 
-  const dueSoon = !loan.returned && isDueSoon(loan.dueDate);
+                        Responsável:
+                        <strong>
+                            ${escapeHTML(
+                                loan.borrower
+                            )}
+                        </strong>
 
-  card.className = "loan-card";
+                        <br>
 
-  if (overdue) {
-    card.classList.add("loan-overdue");
-  } else if (dueSoon) {
-    card.classList.add("loan-warning");
-  }
+                        Quantidade:
+                        ${loan.quantity}
 
-  const status = loan.returned
-    ? "Devolvido"
-    : overdue
-      ? "Atrasado"
-      : dueSoon
-        ? "Devolução próxima"
-        : "No prazo";
+                        <br>
 
-  card.innerHTML = `
+                        Motivo:
+                        ${escapeHTML(
+                            loan.reason ||
+                            "Não informado"
+                        )}
 
-        <div class="loan-header">
+                        <br>
 
-            <div>
+                        Devolução:
+                        ${dueText}
 
-                <h3>
-                    ${escapeHTML(product?.name || "Produto removido")}
-                </h3>
-
-                <p class="product-code">
-                    ${escapeHTML(product?.code || "")}
-                </p>
-
-            </div>
-
-
-            <span class="badge ${
-              loan.returned
-                ? "badge-success"
-                : overdue
-                  ? "badge-danger"
-                  : dueSoon
-                    ? "badge-warning"
-                    : "badge-success"
-            }">
-
-                ${status}
-
-            </span>
-
-        </div>
-
-
-        <div class="loan-info">
-
-            <div class="loan-field">
-
-                <small>Responsável</small>
-
-                <strong>
-                    ${escapeHTML(loan.borrower)}
-                </strong>
-
-            </div>
-
-
-            <div class="loan-field">
-
-                <small>Quantidade</small>
-
-                <strong>
-                    ${loan.quantity}
-                </strong>
-
-            </div>
-
-
-            <div class="loan-field">
-
-                <small>Data do empréstimo</small>
-
-                <strong>
-                    ${formatDate(loan.loanDate)}
-                </strong>
-
-            </div>
-
-
-            <div class="loan-field">
-
-                <small>Devolução prevista</small>
-
-                <strong>
-                    ${formatDate(loan.dueDate)}
-                </strong>
-
-            </div>
-
-
-            <div class="loan-field">
-
-                <small>Motivo</small>
-
-                <strong>
-                    ${escapeHTML(loan.reason || "Não informado")}
-                </strong>
-
-            </div>
-
-        </div>
-
-
-        ${
-          loan.returned
-            ? `
-                    <p class="history-date">
-                        Devolvido em
-                        ${formatDate(loan.returnedAt)}
-                    </p>
-                `
-            : `
-                    <button
-                        class="primary-button"
-                        onclick="returnLoan('${loan.id}')"
-                    >
-                        📥 Registrar devolução
-                    </button>
-                `
-        }
-
-    `;
-
-  return card;
-}
-
-/* =====================================================
-   HISTÓRICO
-===================================================== */
-
-function addHistory(data) {
-  state.history.push({
-    id: generateId(),
-
-    type: data.type,
-
-    message: data.message,
-
-    productId: data.productId || null,
-
-    date: new Date().toISOString(),
-  });
-}
-
-function renderHistory() {
-  const container = document.getElementById("history-list");
-
-  container.innerHTML = "";
-
-  if (!state.history.length) {
-    container.innerHTML = `
-
-            <div class="empty">
-
-                📜
-
-                <br><br>
-
-                Nenhuma movimentação registrada.
-
-            </div>
-
-        `;
-
-    return;
-  }
-
-  state.history
-    .slice()
-    .reverse()
-    .forEach((item) => {
-      const element = document.createElement("div");
-
-      element.className = "history-item";
-
-      element.innerHTML = `
-
-                <div class="history-icon">
-
-                    ${getHistoryIcon(item.type)}
+                    </div>
 
                 </div>
 
 
-                <div class="history-content">
-
-                    <strong>
-                        ${escapeHTML(item.message)}
-                    </strong>
-
-                    <span class="history-date">
-
-                        ${formatDate(item.date)}
-
-                    </span>
-
-                </div>
-
-            `;
-
-      container.appendChild(element);
-    });
-}
-
-function getHistoryIcon(type) {
-  const icons = {
-    create: "➕",
-
-    edit: "✏️",
-
-    delete: "🗑️",
-
-    loan: "📤",
-
-    return: "📥",
-
-    stock: "📦",
-  };
-
-  return icons[type] || "📋";
-}
-
-/* =====================================================
-   DASHBOARD
-===================================================== */
-
-function renderDashboard() {
-  const cards = document.getElementById("dashboard-cards");
-
-  const totalProducts = state.products.length;
-
-  const totalUnits = state.products.reduce(
-    (total, product) => total + product.quantity,
-    0,
-  );
-
-  const lowStock = state.products.filter((product) => {
-    const available = getAvailableQuantity(product);
-
-    return available > 0 && available <= product.minimum;
-  }).length;
-
-  const emptyStock = state.products.filter(
-    (product) => getAvailableQuantity(product) <= 0,
-  ).length;
-
-  const activeLoans = state.loans.filter((loan) => !loan.returned).length;
-
-  cards.innerHTML = `
-
-        <div class="dashboard-card">
-
-            <div class="icon">
-                📦
-            </div>
-
-            <div class="number">
-                ${totalProducts}
-            </div>
-
-            <div class="label">
-                Produtos cadastrados
-            </div>
-
-        </div>
-
-
-        <div class="dashboard-card">
-
-            <div class="icon">
-                🔢
-            </div>
-
-            <div class="number">
-                ${totalUnits}
-            </div>
-
-            <div class="label">
-                Unidades no estoque
-            </div>
-
-        </div>
-
-
-        <div class="dashboard-card">
-
-            <div class="icon">
-                ⚠️
-            </div>
-
-            <div class="number">
-                ${lowStock}
-            </div>
-
-            <div class="label">
-                Estoques baixos
-            </div>
-
-        </div>
-
-
-        <div class="dashboard-card">
-
-            <div class="icon">
-                📤
-            </div>
-
-            <div class="number">
-                ${activeLoans}
-            </div>
-
-            <div class="label">
-                Empréstimos ativos
-            </div>
-
-        </div>
-
-    `;
-
-  renderCategorySummary();
-
-  renderRecentHistory();
-}
-
-function renderCategorySummary() {
-  const container = document.getElementById("category-summary");
-
-  container.innerHTML = "";
-
-  if (!state.categories.length) {
-    container.innerHTML = `<p class="empty">
-                Nenhuma categoria.
-            </p>`;
-
-    return;
-  }
-
-  const total = Math.max(1, state.products.length);
-
-  state.categories.forEach((category) => {
-    const count = state.products.filter(
-      (product) => product.category === category,
-    ).length;
-
-    const percentage = Math.min(100, (count / total) * 100);
-
-    const row = document.createElement("div");
-
-    row.className = "category-row";
-
-    row.innerHTML = `
-
-            <div class="category-row-header">
-
-                <span>
-                    ${escapeHTML(category)}
+                <span
+                    class="loan-status ${status.className}"
+                >
+                    ${status.label}
                 </span>
 
+            </div>
+
+
+            ${
+                loan.status === "active"
+                    ? `
+                    <div
+                        class="form-actions"
+                        style="margin-top: 15px;"
+                    >
+
+                        <button
+                            class="primary-button"
+                            data-return="${loan.id}"
+                        >
+                            Registrar devolução
+                        </button>
+
+                    </div>
+                    `
+                    : `
+                    <p class="section-description">
+                        Devolvido em
+                        ${formatDateTime(
+                            loan.returnedAt
+                        )}
+                    </p>
+                    `
+            }
+
+        `;
+
+
+        const returnButton =
+            card.querySelector(
+                "[data-return]"
+            );
+
+
+        if (returnButton) {
+
+            returnButton.addEventListener(
+                "click",
+                () =>
+                    returnLoan(
+                        loan.id
+                    )
+            );
+
+        }
+
+
+        container.appendChild(card);
+
+    });
+
+}
+
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+function renderDashboard() {
+
+    const cards =
+        document.getElementById(
+            "dashboard-cards"
+        );
+
+
+    const totalProducts =
+        state.products.length;
+
+
+    const totalUnits =
+        state.products.reduce(
+            (
+                total,
+                product
+            ) =>
+                total +
+                Number(product.quantity),
+            0
+        );
+
+
+    const lowStock =
+        state.products.filter(
+            product =>
+                product.quantity <=
+                product.minimum
+        ).length;
+
+
+    const borrowedUnits =
+        state.loans
+            .filter(
+                loan =>
+                    loan.status === "active"
+            )
+            .reduce(
+                (
+                    total,
+                    loan
+                ) =>
+                    total +
+                    Number(loan.quantity),
+                0
+            );
+
+
+    cards.innerHTML = `
+
+        <div class="dashboard-card">
+
+            <h3>
+                Produtos cadastrados
+            </h3>
+
+            <strong>
+                ${totalProducts}
+            </strong>
+
+        </div>
+
+
+        <div class="dashboard-card">
+
+            <h3>
+                Unidades em estoque
+            </h3>
+
+            <strong>
+                ${totalUnits}
+            </strong>
+
+        </div>
+
+
+        <div class="dashboard-card">
+
+            <h3>
+                Estoque baixo
+            </h3>
+
+            <strong>
+                ${lowStock}
+            </strong>
+
+        </div>
+
+
+        <div class="dashboard-card">
+
+            <h3>
+                Unidades emprestadas
+            </h3>
+
+            <strong>
+                ${borrowedUnits}
+            </strong>
+
+        </div>
+
+    `;
+
+
+    renderCategorySummary();
+
+    renderRecentHistory();
+
+}
+
+
+function renderCategorySummary() {
+
+    const container =
+        document.getElementById(
+            "category-summary"
+        );
+
+
+    container.innerHTML = "";
+
+
+    if (
+        state.categories.length === 0
+    ) {
+
+        container.innerHTML =
+            `<div class="empty-state">
+                Nenhuma categoria cadastrada.
+            </div>`;
+
+        return;
+
+    }
+
+
+    const quantities =
+        state.categories.map(
+            category => {
+
+                const quantity =
+                    state.products
+                        .filter(
+                            product =>
+                                product.category ===
+                                category
+                        )
+                        .reduce(
+                            (
+                                total,
+                                product
+                            ) =>
+                                total +
+                                Number(product.quantity),
+                            0
+                        );
+
+
+                return {
+                    category,
+                    quantity
+                };
+
+            }
+        );
+
+
+    const max =
+        Math.max(
+            ...quantities.map(
+                item =>
+                    item.quantity
+            ),
+            1
+        );
+
+
+    quantities.forEach(item => {
+
+        const div =
+            document.createElement("div");
+
+        div.className =
+            "category-item";
+
+
+        const percentage =
+            (
+                item.quantity /
+                max
+            ) *
+            100;
+
+
+        div.innerHTML = `
+
+            <div class="category-item-header">
+
                 <strong>
-                    ${count}
+                    ${escapeHTML(
+                        item.category
+                    )}
                 </strong>
+
+                <span>
+                    ${item.quantity} unidade(s)
+                </span>
 
             </div>
 
@@ -1392,474 +2167,906 @@ function renderCategorySummary() {
 
         `;
 
-    container.appendChild(row);
-  });
+
+        container.appendChild(div);
+
+    });
+
 }
 
+
+/* =========================================================
+   HISTÓRICO RECENTE
+========================================================= */
+
 function renderRecentHistory() {
-  const container = document.getElementById("recent-history");
 
-  const recent = state.history.slice().reverse().slice(0, 6);
+    const container =
+        document.getElementById(
+            "recent-history"
+        );
 
-  container.innerHTML = "";
 
-  if (!recent.length) {
-    container.innerHTML = `
+    container.innerHTML = "";
 
-            <div class="empty">
 
-                Nenhuma movimentação ainda.
+    const recent =
+        state.history.slice(0, 5);
 
-            </div>
 
-        `;
+    if (recent.length === 0) {
 
-    return;
-  }
+        container.innerHTML =
+            `<div class="empty-state">
+                Nenhuma movimentação registrada.
+            </div>`;
 
-  recent.forEach((item) => {
-    const element = document.createElement("div");
+        return;
 
-    element.className = "history-item";
+    }
 
-    element.innerHTML = `
 
-            <div class="history-icon">
+    recent.forEach(item => {
 
-                ${getHistoryIcon(item.type)}
+        const div =
+            document.createElement("div");
 
-            </div>
+        div.className =
+            "history-item";
 
+
+        div.innerHTML = `
 
             <div class="history-content">
 
                 <strong>
-                    ${escapeHTML(item.message)}
+                    ${escapeHTML(
+                        item.message
+                    )}
                 </strong>
 
-                <span class="history-date">
-
-                    ${formatDate(item.date)}
-
+                <span>
+                    ${getHistoryType(
+                        item.type
+                    )}
                 </span>
+
+            </div>
+
+
+            <div class="history-date">
+
+                ${formatDateTime(
+                    item.date
+                )}
 
             </div>
 
         `;
 
-    container.appendChild(element);
-  });
+
+        container.appendChild(div);
+
+    });
+
 }
 
-/* =====================================================
+
+/* =========================================================
+   HISTÓRICO COMPLETO
+========================================================= */
+
+function renderHistory() {
+
+    const container =
+        document.getElementById(
+            "history-list"
+        );
+
+
+    container.innerHTML = "";
+
+
+    if (state.history.length === 0) {
+
+        container.innerHTML =
+            `<div class="empty-state">
+                Nenhuma movimentação registrada.
+            </div>`;
+
+        return;
+
+    }
+
+
+    state.history.forEach(item => {
+
+        const div =
+            document.createElement("div");
+
+        div.className =
+            "history-item";
+
+
+        div.innerHTML = `
+
+            <div class="history-content">
+
+                <strong>
+                    ${escapeHTML(
+                        item.message
+                    )}
+                </strong>
+
+                <span>
+                    ${getHistoryType(
+                        item.type
+                    )}
+                </span>
+
+            </div>
+
+
+            <div class="history-date">
+
+                ${formatDateTime(
+                    item.date
+                )}
+
+            </div>
+
+        `;
+
+
+        container.appendChild(div);
+
+    });
+
+}
+
+
+function getHistoryType(type) {
+
+    const types = {
+
+        create: "Cadastro",
+
+        edit: "Edição",
+
+        delete: "Remoção",
+
+        loan: "Empréstimo",
+
+        return: "Devolução",
+
+        stock: "Estoque"
+
+    };
+
+
+    return types[type] || "Movimentação";
+
+}
+
+
+/* =========================================================
    FILTROS
-===================================================== */
+========================================================= */
 
 function setupFilters() {
-  ["search-input", "category-filter", "status-filter", "sort-filter"].forEach(
-    (id) => {
-      document.getElementById(id).addEventListener("input", renderProducts);
 
-      document.getElementById(id).addEventListener("change", renderProducts);
-    },
-  );
+    document
+        .getElementById("search-input")
+        .addEventListener(
+            "input",
+            renderProducts
+        );
+
+
+    document
+        .getElementById("category-filter")
+        .addEventListener(
+            "change",
+            renderProducts
+        );
+
+
+    document
+        .getElementById("status-filter")
+        .addEventListener(
+            "change",
+            renderProducts
+        );
+
+
+    document
+        .getElementById("sort-filter")
+        .addEventListener(
+            "change",
+            renderProducts
+        );
+
 }
 
-/* =====================================================
-   SISTEMA
-===================================================== */
 
-function setupSystemEvents() {
-  document.getElementById("export-csv").addEventListener("click", exportCSV);
-
-  document
-    .getElementById("export-backup")
-    .addEventListener("click", exportBackup);
-
-  document
-    .getElementById("import-backup")
-    .addEventListener("change", importBackup);
-
-  document.getElementById("clear-data").addEventListener("click", clearAllData);
-
-  document
-    .getElementById("clear-history")
-    .addEventListener("click", clearHistory);
-}
-
-/* =====================================================
+/* =========================================================
    EXPORTAR CSV
-===================================================== */
+========================================================= */
 
 function exportCSV() {
-  if (!state.products.length) {
-    showToast("Não há produtos para exportar.");
 
-    return;
-  }
+    if (state.products.length === 0) {
 
-  const header = [
-    "Código",
-    "Nome",
-    "Categoria",
-    "Quantidade",
-    "Disponível",
-    "Emprestados",
-    "Estoque mínimo",
-    "Localização",
-    "Descrição",
-  ];
+        showToast(
+            "Não há produtos para exportar."
+        );
 
-  const rows = state.products.map((product) => {
-    const available = getAvailableQuantity(product);
+        return;
 
-    return [
-      product.code,
+    }
 
-      product.name,
 
-      product.category,
+    const header = [
 
-      product.quantity,
+        "Nome",
+        "Código",
+        "Categoria",
+        "Quantidade",
+        "Estoque mínimo",
+        "Localização",
+        "Descrição"
 
-      available,
-
-      product.quantity - available,
-
-      product.minimum,
-
-      product.location,
-
-      product.description,
     ];
-  });
 
-  const csv = [header, ...rows]
-    .map((row) =>
-      row
-        .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
-        .join(","),
-    )
-    .join("\n");
 
-  downloadFile(
-    csv,
+    const rows =
+        state.products.map(
+            product => [
 
-    "estoque-almoxarifado.csv",
+                product.name,
 
-    "text/csv;charset=utf-8;",
-  );
+                product.code,
 
-  showToast("Estoque exportado!");
+                product.category,
+
+                product.quantity,
+
+                product.minimum,
+
+                product.location || "",
+
+                product.description || ""
+
+            ]
+        );
+
+
+    const csv = [
+
+        header,
+
+        ...rows
+
+    ]
+
+        .map(
+            row =>
+                row
+                    .map(
+                        value =>
+                            `"${String(value)
+                                .replace(
+                                    /"/g,
+                                    '""'
+                                )}"`
+                    )
+                    .join(";")
+        )
+
+        .join("\n");
+
+
+    const blob =
+        new Blob(
+            [
+                "\uFEFF" + csv
+            ],
+            {
+                type:
+                    "text/csv;charset=utf-8;"
+            }
+        );
+
+
+    downloadFile(
+        blob,
+        "estoque-almoxarifado.csv"
+    );
+
+
+    showToast(
+        "CSV exportado."
+    );
+
 }
 
-/* =====================================================
+
+/* =========================================================
    BACKUP
-===================================================== */
+========================================================= */
 
 function exportBackup() {
-  const backup = {
-    ...state,
 
-    exportedAt: new Date().toISOString(),
+    const backup = {
 
-    version: "2.0",
-  };
+        version: 4,
 
-  const json = JSON.stringify(backup, null, 2);
+        exportedAt:
+            new Date().toISOString(),
 
-  downloadFile(
-    json,
+        data: state
 
-    "backup-almoxarifado.json",
+    };
 
-    "application/json",
-  );
 
-  showToast("Backup criado com sucesso!");
+    const blob =
+        new Blob(
+            [
+                JSON.stringify(
+                    backup,
+                    null,
+                    2
+                )
+            ],
+            {
+                type:
+                    "application/json"
+            }
+        );
+
+
+    downloadFile(
+        blob,
+        "backup-almoxarifado.json"
+    );
+
+
+    showToast(
+        "Backup criado."
+    );
+
 }
 
-/* =====================================================
-   IMPORTAR BACKUP
-===================================================== */
 
-function importBackup(event) {
-  const file = event.target.files[0];
+function setupBackupImport() {
 
-  if (!file) {
-    return;
-  }
+    const input =
+        document.getElementById(
+            "import-backup"
+        );
 
-  const reader = new FileReader();
 
-  reader.onload = function () {
-    try {
-      const imported = JSON.parse(reader.result);
+    const fileName =
+        document.getElementById(
+            "file-name"
+        );
 
-      if (
-        !Array.isArray(imported.products) ||
-        !Array.isArray(imported.categories) ||
-        !Array.isArray(imported.loans)
-      ) {
-        throw new Error("Backup inválido");
-      }
 
-      const confirmImport = confirm(
-        "Importar este backup substituirá os dados atuais. Deseja continuar?",
-      );
+    input.addEventListener(
+        "change",
+        () => {
 
-      if (!confirmImport) {
-        return;
-      }
+            if (
+                input.files &&
+                input.files.length > 0
+            ) {
 
-      state = {
-        products: imported.products,
+                fileName.textContent =
+                    input.files[0].name;
 
-        categories: imported.categories,
+            } else {
 
-        loans: imported.loans,
+                fileName.textContent =
+                    "Nenhum arquivo selecionado";
 
-        history: imported.history || [],
-      };
+            }
 
-      saveData();
+        }
+    );
 
-      renderAll();
 
-      showToast("Backup restaurado!");
-    } catch (error) {
-      console.error(error);
+    input.addEventListener(
+        "change",
+        event => {
 
-      showToast("Arquivo de backup inválido.");
-    }
-  };
+            const file =
+                event.target.files[0];
 
-  reader.readAsText(file);
 
-  event.target.value = "";
+            if (!file) {
+
+                return;
+
+            }
+
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload =
+                event => {
+
+                    try {
+
+                        const backup =
+                            JSON.parse(
+                                event.target.result
+                            );
+
+
+                        if (
+                            !backup.data ||
+                            !Array.isArray(
+                                backup.data.products
+                            )
+                        ) {
+
+                            throw new Error(
+                                "Backup inválido."
+                            );
+
+                        }
+
+
+                        const confirmed =
+                            confirm(
+                                "Deseja restaurar este backup? Os dados atuais serão substituídos."
+                            );
+
+
+                        if (!confirmed) {
+
+                            input.value = "";
+
+                            fileName.textContent =
+                                "Nenhum arquivo selecionado";
+
+                            return;
+
+                        }
+
+
+                        state = {
+
+                            products:
+                                Array.isArray(
+                                    backup.data.products
+                                )
+                                    ? backup.data.products
+                                    : [],
+
+                            categories:
+                                Array.isArray(
+                                    backup.data.categories
+                                )
+                                    ? backup.data.categories
+                                    : [...DEFAULT_CATEGORIES],
+
+                            loans:
+                                Array.isArray(
+                                    backup.data.loans
+                                )
+                                    ? backup.data.loans
+                                    : [],
+
+                            history:
+                                Array.isArray(
+                                    backup.data.history
+                                )
+                                    ? backup.data.history
+                                    : []
+
+                        };
+
+
+                        saveState();
+
+                        renderAll();
+
+
+                        showToast(
+                            "Backup restaurado com sucesso."
+                        );
+
+
+                    } catch (error) {
+
+                        console.error(
+                            error
+                        );
+
+
+                        showToast(
+                            "O arquivo selecionado não é um backup válido."
+                        );
+
+                    }
+
+
+                    input.value = "";
+
+                    fileName.textContent =
+                        "Nenhum arquivo selecionado";
+
+                };
+
+
+            reader.readAsText(file);
+
+        }
+    );
+
 }
 
-/* =====================================================
-   LIMPAR DADOS
-===================================================== */
 
-function clearAllData() {
-  const confirmation = confirm(
-    "ATENÇÃO: isso apagará todos os produtos, empréstimos e histórico. Deseja continuar?",
-  );
+/* =========================================================
+   APAGAR DADOS
+========================================================= */
 
-  if (!confirmation) {
-    return;
-  }
+function setupClearData() {
 
-  const secondConfirmation = confirm(
-    "Essa ação não pode ser desfeita. Confirma?",
-  );
+    document
+        .getElementById("clear-data")
+        .addEventListener(
+            "click",
+            () => {
 
-  if (!secondConfirmation) {
-    return;
-  }
+                const confirmed =
+                    confirm(
+                        "ATENÇÃO!\n\nTodos os produtos, empréstimos e histórico serão apagados.\n\nDeseja continuar?"
+                    );
 
-  state = {
-    products: [],
 
-    categories: [...DEFAULT_CATEGORIES],
+                if (!confirmed) {
 
-    loans: [],
+                    return;
 
-    history: [],
-  };
+                }
 
-  saveData();
 
-  renderAll();
+                state = {
 
-  showToast("Todos os dados foram apagados.");
+                    products: [],
+
+                    categories: [
+                        ...DEFAULT_CATEGORIES
+                    ],
+
+                    loans: [],
+
+                    history: []
+
+                };
+
+
+                saveState();
+
+                resetProductForm();
+
+                renderAll();
+
+                showToast(
+                    "Todos os dados foram apagados."
+                );
+
+            }
+        );
+
 }
 
-function clearHistory() {
-  if (!state.history.length) {
-    showToast("O histórico já está vazio.");
 
-    return;
-  }
+/* =========================================================
+   LIMPAR HISTÓRICO
+========================================================= */
 
-  if (!confirm("Deseja realmente limpar o histórico?")) {
-    return;
-  }
+function setupClearHistory() {
 
-  state.history = [];
+    document
+        .getElementById("clear-history")
+        .addEventListener(
+            "click",
+            () => {
 
-  saveData();
+                if (
+                    state.history.length === 0
+                ) {
 
-  renderAll();
+                    showToast(
+                        "O histórico já está vazio."
+                    );
 
-  showToast("Histórico limpo.");
+                    return;
+
+                }
+
+
+                const confirmed =
+                    confirm(
+                        "Deseja apagar todo o histórico?"
+                    );
+
+
+                if (!confirmed) {
+
+                    return;
+
+                }
+
+
+                state.history = [];
+
+                saveState();
+
+                renderAll();
+
+                showToast(
+                    "Histórico apagado."
+                );
+
+            }
+        );
+
 }
 
-/* =====================================================
-   DARK MODE
-===================================================== */
+
+/* =========================================================
+   MODO ESCURO
+========================================================= */
 
 function setupTheme() {
-  const savedTheme = localStorage.getItem(THEME_KEY);
 
-  if (savedTheme === "dark") {
-    document.body.classList.add("dark");
-  }
+    const button =
+        document.getElementById(
+            "theme-toggle"
+        );
 
-  updateThemeButton();
 
-  document
-    .getElementById("theme-toggle")
-    .addEventListener("click", toggleTheme);
+    const savedTheme =
+        localStorage.getItem(
+            THEME_KEY
+        );
+
+
+    if (savedTheme === "dark") {
+
+        document.body.classList.add(
+            "dark"
+        );
+
+        button.textContent =
+            "☀️ Modo claro";
+
+    }
+
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            document.body.classList.toggle(
+                "dark"
+            );
+
+
+            const dark =
+                document.body.classList.contains(
+                    "dark"
+                );
+
+
+            localStorage.setItem(
+                THEME_KEY,
+                dark
+                    ? "dark"
+                    : "light"
+            );
+
+
+            button.textContent =
+                dark
+                    ? "☀️ Modo claro"
+                    : "🌙 Modo escuro";
+
+        }
+    );
+
 }
 
-function toggleTheme() {
-  document.body.classList.toggle("dark");
 
-  const dark = document.body.classList.contains("dark");
+/* =========================================================
+   DOWNLOAD
+========================================================= */
 
-  localStorage.setItem(
-    THEME_KEY,
+function downloadFile(
+    blob,
+    filename
+) {
 
-    dark ? "dark" : "light",
-  );
+    const url =
+        URL.createObjectURL(blob);
 
-  updateThemeButton();
+
+    const link =
+        document.createElement("a");
+
+
+    link.href = url;
+
+    link.download = filename;
+
+
+    document.body.appendChild(
+        link
+    );
+
+
+    link.click();
+
+
+    link.remove();
+
+
+    URL.revokeObjectURL(url);
+
 }
 
-function updateThemeButton() {
-  const button = document.getElementById("theme-toggle");
 
-  const dark = document.body.classList.contains("dark");
+/* =========================================================
+   FORMATAÇÃO
+========================================================= */
 
-  button.textContent = dark ? "☀️" : "🌙";
+function formatDate(date) {
+
+    if (!date) {
+
+        return "Não informado";
+
+    }
+
+
+    const parsed =
+        new Date(
+            `${date}T00:00:00`
+        );
+
+
+    return parsed.toLocaleDateString(
+        "pt-BR"
+    );
+
 }
 
-/* =====================================================
-   RENDERIZAÇÃO GERAL
-===================================================== */
 
-function renderAll() {
-  renderCategories();
+function formatDateTime(date) {
 
-  renderProducts();
+    if (!date) {
 
-  renderLoans();
+        return "Não informado";
 
-  renderHistory();
+    }
 
-  renderDashboard();
+
+    const parsed =
+        new Date(date);
+
+
+    return parsed.toLocaleString(
+        "pt-BR"
+    );
+
 }
 
-/* =====================================================
-   UTILITÁRIOS
-===================================================== */
 
-function generateId() {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
-}
-
-function formatDate(dateString) {
-  if (!dateString) {
-    return "Não informado";
-  }
-
-  const date = new Date(dateString);
-
-  if (Number.isNaN(date.getTime())) {
-    return dateString;
-  }
-
-  return date.toLocaleDateString("pt-BR");
-}
-
-function formatDateForInput(date) {
-  const year = date.getFullYear();
-
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function isOverdue(dateString) {
-  if (!dateString) {
-    return false;
-  }
-
-  const today = new Date();
-
-  today.setHours(0, 0, 0, 0);
-
-  const due = new Date(`${dateString}T00:00:00`);
-
-  return due < today;
-}
-
-function isDueSoon(dateString) {
-  if (!dateString) {
-    return false;
-  }
-
-  const today = new Date();
-
-  today.setHours(0, 0, 0, 0);
-
-  const due = new Date(`${dateString}T00:00:00`);
-
-  const difference = due - today;
-
-  const days = difference / (1000 * 60 * 60 * 24);
-
-  return days >= 0 && days <= 3;
-}
+/* =========================================================
+   SEGURANÇA
+========================================================= */
 
 function escapeHTML(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
 }
 
-function downloadFile(content, filename, type) {
-  const blob = new Blob([content], {
-    type,
-  });
 
-  const url = URL.createObjectURL(blob);
+/* =========================================================
+   RENDERIZAÇÃO GERAL
+========================================================= */
 
-  const link = document.createElement("a");
+function renderAll() {
 
-  link.href = url;
+    renderCategories();
 
-  link.download = filename;
+    renderProducts();
 
-  document.body.appendChild(link);
+    renderLoans();
 
-  link.click();
+    renderHistory();
 
-  link.remove();
+    renderDashboard();
 
-  URL.revokeObjectURL(url);
 }
 
-function showToast(message) {
-  const container = document.getElementById("toast-container");
 
-  const toast = document.createElement("div");
+/* =========================================================
+   INICIALIZAÇÃO
+========================================================= */
 
-  toast.className = "toast";
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-  toast.textContent = message;
+        loadState();
 
-  container.appendChild(toast);
 
-  setTimeout(() => {
-    toast.remove();
-  }, 3000);
-}
+        setupNavigation();
+
+        setupProductForm();
+
+        setupCategoryForm();
+
+        setupFilters();
+
+        setupLoanForm();
+
+        setupBackupImport();
+
+        setupClearData();
+
+        setupClearHistory();
+
+        setupTheme();
+
+
+        document
+            .getElementById("export-csv")
+            .addEventListener(
+                "click",
+                exportCSV
+            );
+
+
+        document
+            .getElementById("export-backup")
+            .addEventListener(
+                "click",
+                exportBackup
+            );
+
+
+        renderAll();
+
+    }
+);
