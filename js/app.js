@@ -4,6 +4,22 @@
 ========================================================= */
 
 
+/*
+ * ARQUITETURA DO JAVASCRIPT
+ * -------------------------
+ * Este arquivo concentra toda a lógica da aplicação. O projeto utiliza uma
+ * abordagem simples de front-end, sem servidor ou banco de dados externo.
+ *
+ * 1. O objeto `state` funciona como a memória atual da aplicação.
+ * 2. `localStorage` mantém esse estado salvo no navegador.
+ * 3. As funções `render...` transformam os dados do estado em elementos HTML.
+ * 4. As funções `setup...` registram eventos nos formulários, botões e filtros.
+ * 5. Operações que alteram dados também registram movimentações no histórico.
+ *
+ * Dessa forma, a responsabilidade fica separada em três grupos principais:
+ * dados/persistência, regras de negócio e interface (DOM).
+ */
+
 /* =========================================================
    CONFIGURAÇÕES
 ========================================================= */
@@ -46,6 +62,13 @@ let state = {
    UTILIDADES
 ========================================================= */
 
+/**
+ * Gera um identificador único para produtos, empréstimos e registros do histórico.
+ * A combinação entre o horário atual e uma sequência aleatória reduz bastante a
+ * possibilidade de dois registros receberem o mesmo ID.
+ * @returns {string} Identificador gerado para o registro.
+ */
+
 function generateId() {
 
     return Date.now().toString() +
@@ -56,6 +79,13 @@ function generateId() {
 }
 
 
+/**
+ * Persiste o estado atual da aplicação no armazenamento local do navegador.
+ * JSON.stringify transforma o objeto JavaScript em texto para que ele possa ser
+ * armazenado pelo localStorage. Esta função deve ser chamada depois de alterações
+ * que precisam continuar disponíveis após recarregar ou fechar a página.
+ */
+
 function saveState() {
 
     localStorage.setItem(
@@ -65,6 +95,13 @@ function saveState() {
 
 }
 
+
+/**
+ * Recupera os dados salvos anteriormente no localStorage.
+ * Também valida cada coleção antes de colocá-la no estado, evitando que dados
+ * inválidos ou um backup incompleto quebrem a aplicação. Se não existir um
+ * armazenamento anterior, o estado inicial é salvo pela primeira vez.
+ */
 
 function loadState() {
 
@@ -127,6 +164,13 @@ function loadState() {
    TOAST
 ========================================================= */
 
+/**
+ * Exibe uma pequena mensagem temporária para informar o resultado de uma ação.
+ * O elemento é criado dinamicamente e removido após alguns segundos, evitando
+ * que mensagens antigas permaneçam ocupando espaço na interface.
+ * @param {string} message Mensagem que será apresentada ao usuário.
+ */
+
 function showToast(message) {
 
     const container =
@@ -158,6 +202,12 @@ function showToast(message) {
 /* =========================================================
    NAVEGAÇÃO
 ========================================================= */
+
+/**
+ * Configura a navegação principal do sistema.
+ * Cada botão possui o atributo data-section, que indica qual section deve ser
+ * exibida. A função também controla a classe `active` para destacar a seção atual.
+ */
 
 function setupNavigation() {
 
@@ -242,6 +292,13 @@ function setupNavigation() {
 /* =========================================================
    CATEGORIAS
 ========================================================= */
+
+/**
+ * Atualiza todas as interfaces que dependem das categorias cadastradas.
+ * A mesma fonte de dados alimenta o select do formulário, o filtro de produtos
+ * e a lista de gerenciamento de categorias. Assim, uma alteração é refletida
+ * em toda a aplicação após a renderização.
+ */
 
 function renderCategories() {
 
@@ -389,6 +446,12 @@ function renderCategories() {
    ADICIONAR CATEGORIA
 ========================================================= */
 
+/**
+ * Registra o evento de criação de uma nova categoria.
+ * O formulário impede categorias vazias e verifica duplicidades ignorando
+ * diferenças entre letras maiúsculas e minúsculas.
+ */
+
 function setupCategoryForm() {
 
     const form =
@@ -458,6 +521,13 @@ function setupCategoryForm() {
 }
 
 
+/**
+ * Remove uma categoria, desde que ela não esteja sendo utilizada por nenhum produto.
+ * Essa validação protege a integridade dos dados e evita produtos apontando para
+ * uma categoria que deixou de existir.
+ * @param {string} category Nome exato da categoria a ser removida.
+ */
+
 function deleteCategory(category) {
 
     const used =
@@ -512,6 +582,15 @@ function deleteCategory(category) {
    HISTÓRICO
 ========================================================= */
 
+/**
+ * Adiciona uma movimentação ao histórico do sistema.
+ * Os registros são inseridos no início da lista para que os acontecimentos mais
+ * recentes apareçam primeiro. Para evitar crescimento indefinido do armazenamento,
+ * apenas as 200 movimentações mais recentes são mantidas.
+ * @param {string} type Tipo interno da movimentação.
+ * @param {string} message Texto que será mostrado ao usuário.
+ */
+
 function addHistory(
     type,
     message
@@ -545,6 +624,13 @@ function addHistory(
 /* =========================================================
    PRODUTOS
 ========================================================= */
+
+/**
+ * Configura o formulário responsável por cadastrar e editar produtos.
+ * O mesmo formulário atende aos dois casos: quando `editing-id` está vazio, um
+ * novo produto é criado; quando possui um ID, os dados existentes são atualizados.
+ * Também realiza as validações de campos e impede códigos duplicados.
+ */
 
 function setupProductForm() {
 
@@ -730,6 +816,14 @@ function setupProductForm() {
 }
 
 
+/**
+ * Atualiza os dados de um produto existente.
+ * Além da alteração cadastral, compara a quantidade anterior com a nova para
+ * registrar no histórico uma movimentação específica de estoque quando necessário.
+ * @param {string} id Identificador do produto.
+ * @param {Object} data Novos dados que serão aplicados ao produto.
+ */
+
 function editProduct(
     id,
     data
@@ -778,6 +872,13 @@ function editProduct(
 
 }
 
+
+/**
+ * Carrega os dados de um produto no formulário de cadastro/edição.
+ * A função também muda o título do formulário e revela o botão de cancelamento,
+ * deixando claro para o usuário que ele está editando um registro existente.
+ * @param {string} id Identificador do produto selecionado.
+ */
 
 function startEditProduct(id) {
 
@@ -857,6 +958,11 @@ function startEditProduct(id) {
 }
 
 
+/**
+ * Limpa o formulário e retorna a interface ao modo de cadastro de um novo produto.
+ * O ID de edição é apagado e o botão de cancelamento deixa de ser exibido.
+ */
+
 function resetProductForm() {
 
     const form =
@@ -887,6 +993,13 @@ function resetProductForm() {
 
 }
 
+
+/**
+ * Exclui um produto após validar se ele não possui empréstimo ativo.
+ * A confirmação adicional evita exclusões acidentais e a operação também é
+ * registrada no histórico para manter rastreabilidade.
+ * @param {string} id Identificador do produto a ser excluído.
+ */
 
 function deleteProduct(id) {
 
@@ -962,6 +1075,15 @@ function deleteProduct(id) {
    STATUS DO PRODUTO
 ========================================================= */
 
+/**
+ * Determina o status atual de estoque de um produto.
+ * A classificação considera primeiro a quantidade disponível, depois o estoque
+ * mínimo e, por fim, a existência de unidades emprestadas. O resultado é usado
+ * pelos filtros e pelos indicadores visuais dos cards.
+ * @param {Object} product Produto que será analisado.
+ * @returns {{key:string,label:string,className:string}} Status padronizado do produto.
+ */
+
 function getProductStatus(product) {
 
     const borrowed =
@@ -1015,6 +1137,14 @@ function getProductStatus(product) {
 }
 
 
+/**
+ * Soma a quantidade de unidades que estão em empréstimos ativos para um produto.
+ * O valor é calculado a partir dos empréstimos em vez de ser armazenado separadamente,
+ * evitando inconsistência entre estoque e registros de empréstimo.
+ * @param {string} productId Identificador do produto.
+ * @returns {number} Quantidade atualmente emprestada.
+ */
+
 function getBorrowedQuantity(
     productId
 ) {
@@ -1041,6 +1171,12 @@ function getBorrowedQuantity(
 /* =========================================================
    RENDER PRODUTOS
 ========================================================= */
+
+/**
+ * Renderiza a lista de produtos de acordo com os filtros e a ordenação selecionados.
+ * Cada card apresenta informações do estoque e ações como editar, excluir e emprestar.
+ * A função também calcula a quantidade disponível considerando os empréstimos ativos.
+ */
 
 function renderProducts() {
 
@@ -1382,6 +1518,13 @@ function renderProducts() {
    EMPRÉSTIMOS
 ========================================================= */
 
+/**
+ * Abre o modal de empréstimo para um produto específico.
+ * O limite máximo de quantidade disponível é aplicado ao campo do modal para
+ * impedir que o usuário empreste mais unidades do que existem no estoque.
+ * @param {string} productId Identificador do produto selecionado.
+ */
+
 function openLoanModal(productId) {
 
     const product =
@@ -1449,6 +1592,10 @@ function openLoanModal(productId) {
 }
 
 
+/**
+ * Fecha o modal de empréstimo e limpa o formulário para a próxima operação.
+ */
+
 function closeLoanModal() {
 
     document
@@ -1457,6 +1604,12 @@ function closeLoanModal() {
 
 }
 
+
+/**
+ * Configura o formulário de criação de empréstimos.
+ * Valida responsável, quantidade e disponibilidade antes de criar o registro.
+ * O empréstimo recebe data de criação, prazo de devolução e status ativo.
+ */
 
 function setupLoanForm() {
 
@@ -1619,6 +1772,14 @@ function setupLoanForm() {
 }
 
 
+/**
+ * Registra a devolução de um empréstimo ativo.
+ * A operação altera o status, grava a data/hora da devolução e adiciona uma
+ * movimentação no histórico. O estoque disponível passa a refletir automaticamente
+ * a devolução porque a quantidade emprestada é recalculada pelos empréstimos ativos.
+ * @param {string} loanId Identificador do empréstimo devolvido.
+ */
+
 function returnLoan(loanId) {
 
     const loan =
@@ -1681,6 +1842,14 @@ function returnLoan(loanId) {
 /* =========================================================
    STATUS DO EMPRÉSTIMO
 ========================================================= */
+
+/**
+ * Calcula o status de prazo de um empréstimo.
+ * Empréstimos encerrados são marcados como devolvidos; empréstimos ativos podem
+ * estar atrasados, próximos do vencimento ou dentro do prazo.
+ * @param {Object} loan Empréstimo que será analisado.
+ * @returns {{label:string,className:string}} Status visual do empréstimo.
+ */
 
 function getLoanStatus(loan) {
 
@@ -1779,6 +1948,12 @@ function getLoanStatus(loan) {
 /* =========================================================
    RENDER EMPRÉSTIMOS
 ========================================================= */
+
+/**
+ * Renderiza todos os empréstimos, priorizando os registros mais recentes.
+ * Para cada empréstimo são exibidos produto, responsável, quantidade, motivo,
+ * prazo e status. Em empréstimos ativos aparece a ação para registrar a devolução.
+ */
 
 function renderLoans() {
 
@@ -1944,6 +2119,12 @@ function renderLoans() {
    DASHBOARD
 ========================================================= */
 
+/**
+ * Atualiza os indicadores principais do Dashboard.
+ * Os números são derivados do estado atual, permitindo visualizar rapidamente
+ * quantidade de produtos, estoque baixo, itens sem estoque e empréstimos ativos.
+ */
+
 function renderDashboard() {
 
     const cards =
@@ -2055,6 +2236,12 @@ function renderDashboard() {
 
 }
 
+
+/**
+ * Monta o resumo visual de estoque agrupado por categoria.
+ * Para cada categoria são calculadas as quantidades e a proporção relativa,
+ * facilitando a leitura da distribuição do estoque.
+ */
 
 function renderCategorySummary() {
 
@@ -2179,6 +2366,11 @@ function renderCategorySummary() {
    HISTÓRICO RECENTE
 ========================================================= */
 
+/**
+ * Mostra no Dashboard as movimentações mais recentes do sistema.
+ * Esta visão é apenas um resumo; a seção Histórico apresenta a lista completa.
+ */
+
 function renderRecentHistory() {
 
     const container =
@@ -2256,6 +2448,11 @@ function renderRecentHistory() {
    HISTÓRICO COMPLETO
 ========================================================= */
 
+/**
+ * Renderiza o histórico completo de movimentações armazenado no estado.
+ * O histórico serve como trilha de auditoria simples das operações realizadas.
+ */
+
 function renderHistory() {
 
     const container =
@@ -2325,6 +2522,14 @@ function renderHistory() {
 }
 
 
+/**
+ * Traduz o código interno de uma movimentação para um texto compreensível.
+ * Isso permite manter valores curtos e consistentes no estado e apresentar
+ * descrições amigáveis na interface.
+ * @param {string} type Código interno do tipo de movimentação.
+ * @returns {string} Nome exibido para o tipo informado.
+ */
+
 function getHistoryType(type) {
 
     const types = {
@@ -2352,6 +2557,12 @@ function getHistoryType(type) {
 /* =========================================================
    FILTROS
 ========================================================= */
+
+/**
+ * Registra os eventos dos filtros, da busca e da ordenação da lista de produtos.
+ * Qualquer alteração nesses controles dispara uma nova renderização dos produtos,
+ * sem modificar os dados originais armazenados no estado.
+ */
 
 function setupFilters() {
 
@@ -2392,6 +2603,12 @@ function setupFilters() {
 /* =========================================================
    EXPORTAR CSV
 ========================================================= */
+
+/**
+ * Gera um arquivo CSV contendo os produtos cadastrados.
+ * O arquivo é criado no navegador e disponibilizado para download sem depender
+ * de servidor ou API externa.
+ */
 
 function exportCSV() {
 
@@ -2495,6 +2712,12 @@ function exportCSV() {
    BACKUP
 ========================================================= */
 
+/**
+ * Cria um backup completo do estado da aplicação em formato JSON.
+ * Diferentemente do CSV, o backup preserva produtos, categorias, empréstimos e histórico,
+ * permitindo restaurar a aplicação posteriormente.
+ */
+
 function exportBackup() {
 
     const backup = {
@@ -2537,6 +2760,12 @@ function exportBackup() {
 
 }
 
+
+/**
+ * Configura a restauração de um backup JSON selecionado pelo usuário.
+ * O arquivo é lido localmente com FileReader, validado e só então incorporado ao estado.
+ * Nenhum arquivo é enviado para um servidor.
+ */
 
 function setupBackupImport() {
 
@@ -2714,6 +2943,12 @@ function setupBackupImport() {
    APAGAR DADOS
 ========================================================= */
 
+/**
+ * Configura a ação de apagar todos os dados do sistema.
+ * A operação exige confirmação e recria as categorias padrão, deixando produtos,
+ * empréstimos e histórico vazios.
+ */
+
 function setupClearData() {
 
     document
@@ -2770,6 +3005,11 @@ function setupClearData() {
    LIMPAR HISTÓRICO
 ========================================================= */
 
+/**
+ * Configura o botão responsável por limpar somente o histórico.
+ * Produtos, categorias e empréstimos permanecem preservados.
+ */
+
 function setupClearHistory() {
 
     document
@@ -2823,6 +3063,12 @@ function setupClearHistory() {
 /* =========================================================
    MODO ESCURO
 ========================================================= */
+
+/**
+ * Controla o tema claro/escuro da aplicação.
+ * A preferência é salva separadamente no localStorage para que o tema escolhido
+ * seja mantido entre as sessões do navegador.
+ */
 
 function setupTheme() {
 
@@ -2888,6 +3134,14 @@ function setupTheme() {
    DOWNLOAD
 ========================================================= */
 
+/**
+ * Cria temporariamente um Blob e um link invisível para iniciar um download no navegador.
+ * Essa abordagem permite gerar arquivos CSV e JSON diretamente no front-end.
+ * @param {string} content Conteúdo do arquivo.
+ * @param {string} filename Nome sugerido para o arquivo baixado.
+ * @param {string} type MIME type do arquivo.
+ */
+
 function downloadFile(
     blob,
     filename
@@ -2926,6 +3180,12 @@ function downloadFile(
    FORMATAÇÃO
 ========================================================= */
 
+/**
+ * Converte uma data para o formato brasileiro usado na interface.
+ * @param {string|Date} date Data que será formatada.
+ * @returns {string} Data no formato DD/MM/AAAA.
+ */
+
 function formatDate(date) {
 
     if (!date) {
@@ -2947,6 +3207,12 @@ function formatDate(date) {
 
 }
 
+
+/**
+ * Converte uma data para o formato brasileiro com data e horário.
+ * @param {string|Date} date Data que será formatada.
+ * @returns {string} Data e hora formatadas.
+ */
 
 function formatDateTime(date) {
 
@@ -2971,6 +3237,14 @@ function formatDateTime(date) {
 /* =========================================================
    SEGURANÇA
 ========================================================= */
+
+/**
+ * Escapa caracteres especiais antes de inserir valores fornecidos pelo usuário em HTML.
+ * Essa proteção evita que nomes, descrições ou motivos contendo marcação HTML sejam
+ * interpretados como código pelo navegador.
+ * @param {*} value Valor que será convertido e escapado.
+ * @returns {string} Texto seguro para inserção em HTML.
+ */
 
 function escapeHTML(value) {
 
@@ -3004,6 +3278,13 @@ function escapeHTML(value) {
 /* =========================================================
    RENDERIZAÇÃO GERAL
 ========================================================= */
+
+/**
+ * Centraliza a atualização da interface.
+ * Sempre que uma operação altera o estado, esta função chama os renderizadores
+ * necessários para manter Dashboard, produtos, categorias, empréstimos e histórico
+ * sincronizados com os dados atuais.
+ */
 
 function renderAll() {
 

@@ -718,8 +718,13 @@ textarea {
 }
 
 .loan-card p {
-  margin: 8px 0;
-  line-height:1.5;
+  /*
+   * O texto de devolução usa a mesma classe de descrição do restante do sistema.
+   * Aqui sobrescrevemos a margem negativa de .section-description para impedir
+   * que "Devolução" e "Devolvido em" fiquem visualmente colados.
+   */
+  margin: 14px 0 0;
+  line-height: 1.6;
 }
 
 /* =========================
