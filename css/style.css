@@ -313,7 +313,7 @@ main {
 .dashboard-cards {
   display: grid;
 
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
 
   gap: 18px;
 
@@ -728,6 +728,49 @@ textarea {
 }
 
 /* =========================
+   DOAÇÕES
+========================= */
+
+.donation-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 25px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 25px;
+}
+
+.form-help {
+  margin: 15px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+#donation-list {
+  display: grid;
+  gap: 10px;
+}
+
+.donation-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.donation-quantity {
+  display: inline-block;
+  margin-left: 8px;
+  color: var(--success);
+  font-size: 0.9rem;
+}
+
+/* =========================
    HISTÓRICO
 ========================= */
 
@@ -1106,5 +1149,44 @@ textarea {
     flex-direction: column;
 
     align-items: flex-start;
+  }
+}
+
+/*
+ * Organiza os formulários de entrada e saída de doações lado a lado em telas
+ * maiores. Em telas pequenas, o layout volta automaticamente para uma coluna.
+ */
+.donation-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.donation-form {
+  margin-bottom: 0;
+}
+
+.donation-form-header {
+  margin-bottom: 20px;
+}
+
+.donation-form-header h3 {
+  margin: 0 0 6px;
+}
+
+.donation-form-header p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.donation-quantity-out {
+  color: var(--danger);
+}
+
+@media (max-width: 900px) {
+  .donation-card-grid {
+    grid-template-columns: 1fr;
   }
 }

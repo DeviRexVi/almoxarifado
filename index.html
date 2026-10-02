@@ -53,6 +53,10 @@
                 Empréstimos
             </button>
 
+            <button data-section="doacoes">
+                Doações
+            </button>
+
             <button data-section="historico">
                 Histórico
             </button>
@@ -397,6 +401,135 @@
 
             <!-- Os cards de empréstimo são gerados pelo JavaScript. -->
             <div id="loan-list"></div>
+
+        </section>
+
+
+        <!-- =========================
+             DOAÇÕES
+        ========================== -->
+
+        <section id="doacoes" class="section">
+
+            <div class="section-header">
+
+                <div>
+                    <h2>Doações</h2>
+
+                    <p class="section-description">
+                        Registre produtos recebidos por meio de doações e mantenha o estoque atualizado.
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- Formulário para registrar produtos que chegam ao almoxarifado por doação. -->
+            <div class="donation-card-grid">
+
+                <form id="donation-form" class="donation-form">
+
+                    <div class="donation-form-header">
+                        <h3>Receber uma doação</h3>
+                        <p>Registre produtos recebidos e aumente automaticamente o estoque.</p>
+                    </div>
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="donation-product">Produto recebido</label>
+                            <select id="donation-product" required></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="donation-quantity">Quantidade</label>
+                            <input id="donation-quantity" type="number" min="1" required placeholder="Ex.: 5">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="donor">Doador</label>
+                            <input id="donor" required placeholder="Nome da pessoa ou instituição">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="donation-date">Data da doação</label>
+                            <input id="donation-date" type="date" required>
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+                        <label for="donation-notes">Observações</label>
+                        <textarea id="donation-notes" placeholder="Ex.: Equipamentos em bom estado, destinados ao laboratório..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="primary-button">Receber doação</button>
+                    </div>
+
+                    <p class="form-help">
+                        O produto precisa estar cadastrado no estoque. Se for um item novo, cadastre-o primeiro na aba Adicionar.
+                    </p>
+
+                </form>
+
+                <!-- Formulário para registrar produtos que saem do estoque como doação. -->
+                <form id="outgoing-donation-form" class="donation-form">
+
+                    <div class="donation-form-header">
+                        <h3>Doar um produto</h3>
+                        <p>Registre uma saída de estoque destinada a uma pessoa, família ou instituição.</p>
+                    </div>
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="outgoing-donation-product">Produto</label>
+                            <select id="outgoing-donation-product" required></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="outgoing-donation-quantity">Quantidade</label>
+                            <input id="outgoing-donation-quantity" type="number" min="1" required placeholder="Ex.: 2">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recipient">Destinatário</label>
+                            <input id="recipient" required placeholder="Pessoa, família ou instituição">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="outgoing-donation-date">Data da doação</label>
+                            <input id="outgoing-donation-date" type="date" required>
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+                        <label for="outgoing-donation-notes">Observações</label>
+                        <textarea id="outgoing-donation-notes" placeholder="Ex.: Doação destinada a uma família atendida pelo projeto..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="primary-button">Registrar saída por doação</button>
+                    </div>
+
+                    <p class="form-help">
+                        A quantidade disponível não pode ser ultrapassada. Produtos emprestados não podem ser doados até retornarem ao estoque.
+                    </p>
+
+                </form>
+
+            </div>
+
+            <div class="dashboard-section donation-history-section">
+                <h3>Doações recebidas</h3>
+                <div id="donation-list"></div>
+            </div>
+
+            <div class="dashboard-section donation-history-section">
+                <h3>Doações realizadas</h3>
+                <div id="outgoing-donation-list"></div>
+            </div>
 
         </section>
 

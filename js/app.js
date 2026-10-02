@@ -53,6 +53,10 @@ let state = {
 
     loans: [],
 
+    donations: [],
+
+    outgoingDonations: [],
+
     history: []
 
 };
@@ -137,6 +141,16 @@ function loadState() {
             loans:
                 Array.isArray(parsed.loans)
                     ? parsed.loans
+                    : [],
+
+            donations:
+                Array.isArray(parsed.donations)
+                    ? parsed.donations
+                    : [],
+
+            outgoingDonations:
+                Array.isArray(parsed.outgoingDonations)
+                    ? parsed.outgoingDonations
                     : [],
 
             history:
@@ -2227,6 +2241,19 @@ function renderDashboard() {
 
         </div>
 
+
+        <div class="dashboard-card">
+
+            <h3>
+                Doações registradas
+            </h3>
+
+            <strong>
+                ${state.donations.length}
+            </strong>
+
+        </div>
+
     `;
 
 
@@ -2445,6 +2472,435 @@ function renderRecentHistory() {
 
 
 /* =========================================================
+   DOAÇÕES
+========================================================= */
+
+/**
+ * Preenche o seletor de produtos da aba de doações.
+ *
+ * A doação representa uma entrada de estoque. Por isso,
+ * o produto precisa existir antes de recebermos a quantidade.
+ */
+function renderDonationProducts() {
+
+    const select =
+        document.getElementById("donation-product");
+
+    if (!select) {
+        return;
+    }
+
+    const currentValue = select.value;
+
+    select.innerHTML = `
+        <option value="">Selecione um produto</option>
+    `;
+
+    state.products
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+        .forEach(product => {
+
+            const option = document.createElement("option");
+
+            option.value = product.id;
+            option.textContent = `${product.name} (${product.code})`;
+
+            select.appendChild(option);
+
+        });
+
+    select.value = currentValue;
+
+}
+
+
+/**
+ * Preenche o seletor usado para doar produtos que já estão no estoque.
+ * A lista mostra também a quantidade realmente disponível, descontando
+ * unidades que estejam atualmente emprestadas.
+ */
+function renderOutgoingDonationProducts() {
+
+    const select =
+        document.getElementById("outgoing-donation-product");
+
+    if (!select) {
+        return;
+    }
+
+    const currentValue = select.value;
+
+    select.innerHTML = `
+        <option value="">Selecione um produto</option>
+    `;
+
+    state.products
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+        .forEach(product => {
+
+            const available =
+                Math.max(0, product.quantity - getBorrowedQuantity(product.id));
+
+            const option = document.createElement("option");
+
+            option.value = product.id;
+            option.textContent = `${product.name} (${available} disponível(is))`;
+            option.disabled = available === 0;
+
+            select.appendChild(option);
+
+        });
+
+    select.value = currentValue;
+
+}
+
+
+/**
+ * Configura o formulário responsável pelo registro de doações.
+ *
+ * Ao confirmar uma doação:
+ * 1. valida os dados;
+ * 2. aumenta a quantidade do produto no estoque;
+ * 3. cria um registro da doação;
+ * 4. adiciona a movimentação ao histórico;
+ * 5. salva tudo no localStorage;
+ * 6. atualiza a interface.
+ */
+function setupDonationForm() {
+
+    const form =
+        document.getElementById("donation-form");
+
+    if (!form) {
+        return;
+    }
+
+    const dateInput =
+        document.getElementById("donation-date");
+
+    // Preenche a data automaticamente com o dia atual.
+    if (dateInput) {
+        dateInput.value = new Date()
+            .toISOString()
+            .split("T")[0];
+    }
+
+    form.addEventListener("submit", event => {
+
+        event.preventDefault();
+
+        const productId =
+            document.getElementById("donation-product").value;
+
+        const quantity =
+            Number(
+                document.getElementById("donation-quantity").value
+            );
+
+        const donor =
+            document.getElementById("donor").value.trim();
+
+        const date =
+            document.getElementById("donation-date").value;
+
+        const notes =
+            document.getElementById("donation-notes").value.trim();
+
+        const product =
+            state.products.find(item => item.id === productId);
+
+        if (!product) {
+            showToast("Selecione um produto.");
+            return;
+        }
+
+        if (quantity <= 0 || !donor || !date) {
+            showToast("Preencha os dados da doação corretamente.");
+            return;
+        }
+
+        // A doação entra diretamente no estoque disponível.
+        product.quantity += quantity;
+
+        const donation = {
+            id: generateId(),
+            productId,
+            productName: product.name,
+            quantity,
+            donor,
+            date,
+            notes,
+            createdAt: new Date().toISOString()
+        };
+
+        state.donations.unshift(donation);
+
+        addHistory(
+            "donation",
+            `${quantity} unidade(s) de "${product.name}" foram recebidas em doação de ${donor}.`
+        );
+
+        saveState();
+
+        form.reset();
+
+        // Depois do reset, a data volta a ser preenchida automaticamente.
+        dateInput.value = new Date()
+            .toISOString()
+            .split("T")[0];
+
+        renderAll();
+
+        showToast("Doação registrada e estoque atualizado.");
+
+    });
+
+}
+
+
+/**
+ * Configura o formulário de saída de estoque por doação.
+ *
+ * Diferentemente de uma doação recebida, esta operação reduz o estoque.
+ * Antes de realizar a saída, verificamos a quantidade disponível para evitar
+ * doar unidades que já estejam emprestadas ou que não existam no estoque.
+ */
+function setupOutgoingDonationForm() {
+
+    const form =
+        document.getElementById("outgoing-donation-form");
+
+    if (!form) {
+        return;
+    }
+
+    const dateInput =
+        document.getElementById("outgoing-donation-date");
+
+    if (dateInput) {
+        dateInput.value = new Date()
+            .toISOString()
+            .split("T")[0];
+    }
+
+    form.addEventListener("submit", event => {
+
+        event.preventDefault();
+
+        const productId =
+            document.getElementById("outgoing-donation-product").value;
+
+        const quantity =
+            Number(
+                document.getElementById("outgoing-donation-quantity").value
+            );
+
+        const recipient =
+            document.getElementById("recipient").value.trim();
+
+        const date =
+            document.getElementById("outgoing-donation-date").value;
+
+        const notes =
+            document.getElementById("outgoing-donation-notes").value.trim();
+
+        const product =
+            state.products.find(item => item.id === productId);
+
+        if (!product) {
+            showToast("Selecione um produto.");
+            return;
+        }
+
+        if (quantity <= 0 || !recipient || !date) {
+            showToast("Preencha os dados da doação corretamente.");
+            return;
+        }
+
+        const borrowedQuantity =
+            getBorrowedQuantity(product.id);
+
+        const availableQuantity =
+            Math.max(0, product.quantity - borrowedQuantity);
+
+        if (quantity > availableQuantity) {
+            showToast(
+                `Quantidade indisponível. Há apenas ${availableQuantity} unidade(s) disponível(is).`
+            );
+            return;
+        }
+
+        // A saída por doação reduz apenas o estoque disponível.
+        // A quantidade emprestada continua sendo controlada separadamente.
+        product.quantity -= quantity;
+
+        const outgoingDonation = {
+            id: generateId(),
+            productId,
+            productName: product.name,
+            quantity,
+            recipient,
+            date,
+            notes,
+            createdAt: new Date().toISOString()
+        };
+
+        state.outgoingDonations.unshift(outgoingDonation);
+
+        addHistory(
+            "donation_out",
+            `${quantity} unidade(s) de "${product.name}" foram doadas para ${recipient}.`
+        );
+
+        saveState();
+
+        form.reset();
+
+        dateInput.value = new Date()
+            .toISOString()
+            .split("T")[0];
+
+        renderAll();
+
+        showToast("Doação realizada e estoque atualizado.");
+
+    });
+
+}
+
+
+/**
+ * Exibe todas as doações registradas, começando pelas mais recentes.
+ */
+function renderDonations() {
+
+    const container =
+        document.getElementById("donation-list");
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = "";
+
+    if (state.donations.length === 0) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+                Nenhuma doação registrada.
+            </div>
+        `;
+
+        return;
+
+    }
+
+    state.donations.forEach(donation => {
+
+        const div = document.createElement("div");
+
+        div.className = "donation-item";
+
+        div.innerHTML = `
+            <div class="history-content">
+                <strong>
+                    ${escapeHTML(donation.productName)}
+                    <span class="donation-quantity">
+                        +${donation.quantity} unidade(s)
+                    </span>
+                </strong>
+
+                <span>
+                    Doador: ${escapeHTML(donation.donor)}
+                </span>
+
+                ${
+                    donation.notes
+                        ? `<span>Observações: ${escapeHTML(donation.notes)}</span>`
+                        : ""
+                }
+            </div>
+
+            <div class="history-date">
+                ${formatDate(donation.date)}
+            </div>
+        `;
+
+        container.appendChild(div);
+
+    });
+
+}
+
+
+/**
+ * Exibe as doações realizadas pelo almoxarifado, começando pelas mais recentes.
+ */
+function renderOutgoingDonations() {
+
+    const container =
+        document.getElementById("outgoing-donation-list");
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = "";
+
+    if (state.outgoingDonations.length === 0) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+                Nenhuma doação realizada.
+            </div>
+        `;
+
+        return;
+
+    }
+
+    state.outgoingDonations.forEach(donation => {
+
+        const div = document.createElement("div");
+
+        div.className = "donation-item outgoing-donation-item";
+
+        div.innerHTML = `
+            <div class="history-content">
+                <strong>
+                    ${escapeHTML(donation.productName)}
+                    <span class="donation-quantity donation-quantity-out">
+                        -${donation.quantity} unidade(s)
+                    </span>
+                </strong>
+
+                <span>
+                    Destinatário: ${escapeHTML(donation.recipient)}
+                </span>
+
+                ${
+                    donation.notes
+                        ? `<span>Observações: ${escapeHTML(donation.notes)}</span>`
+                        : ""
+                }
+            </div>
+
+            <div class="history-date">
+                ${formatDate(donation.date)}
+            </div>
+        `;
+
+        container.appendChild(div);
+
+    });
+
+}
+
+
+/* =========================================================
    HISTÓRICO COMPLETO
 ========================================================= */
 
@@ -2543,6 +2999,10 @@ function getHistoryType(type) {
         loan: "Empréstimo",
 
         return: "Devolução",
+
+        donation: "Doação recebida",
+
+        donation_out: "Doação realizada",
 
         stock: "Estoque"
 
@@ -2722,7 +3182,7 @@ function exportBackup() {
 
     const backup = {
 
-        version: 4,
+        version: 5,
 
         exportedAt:
             new Date().toISOString(),
@@ -2889,6 +3349,20 @@ function setupBackupImport() {
                                     ? backup.data.loans
                                     : [],
 
+                            donations:
+                                Array.isArray(
+                                    backup.data.donations
+                                )
+                                    ? backup.data.donations
+                                    : [],
+
+                            outgoingDonations:
+                                Array.isArray(
+                                    backup.data.outgoingDonations
+                                )
+                                    ? backup.data.outgoingDonations
+                                    : [],
+
                             history:
                                 Array.isArray(
                                     backup.data.history
@@ -2959,7 +3433,7 @@ function setupClearData() {
 
                 const confirmed =
                     confirm(
-                        "ATENÇÃO!\n\nTodos os produtos, empréstimos e histórico serão apagados.\n\nDeseja continuar?"
+                        "ATENÇÃO!\n\nTodos os produtos, empréstimos, doações e histórico serão apagados.\n\nDeseja continuar?"
                     );
 
 
@@ -2979,6 +3453,10 @@ function setupClearData() {
                     ],
 
                     loans: [],
+
+                    donations: [],
+
+                    outgoingDonations: [],
 
                     history: []
 
@@ -3294,6 +3772,14 @@ function renderAll() {
 
     renderLoans();
 
+    renderDonationProducts();
+
+    renderOutgoingDonationProducts();
+
+    renderDonations();
+
+    renderOutgoingDonations();
+
     renderHistory();
 
     renderDashboard();
@@ -3321,6 +3807,10 @@ document.addEventListener(
         setupFilters();
 
         setupLoanForm();
+
+        setupDonationForm();
+
+        setupOutgoingDonationForm();
 
         setupBackupImport();
 

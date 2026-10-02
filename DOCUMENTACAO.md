@@ -522,3 +522,32 @@ MySQL
 ```
 
 Nesse cenário, produtos, usuários, empréstimos e histórico deixariam de ficar somente no navegador e passariam a ser armazenados centralmente.
+
+
+## Módulo de doações
+
+O módulo de doações representa uma **entrada de estoque**. A estrutura de dados adicionada ao estado da aplicação é:
+
+```javascript
+donations: []
+```
+
+Cada doação possui `id`, `productId`, `productName`, `quantity`, `donor`, `date`, `notes` e `createdAt`.
+
+A função `setupDonationForm()` recebe os dados do formulário, valida o produto e a quantidade, soma a quantidade ao produto, cria o registro da doação e adiciona uma entrada ao histórico.
+
+A função `renderDonationProducts()` mantém o seletor de produtos atualizado. A função `renderDonations()` transforma os registros armazenados em cards visuais.
+
+### Regra de negócio
+
+A doação não cria automaticamente um produto novo. O item deve ser cadastrado primeiro na aba **Adicionar**. Isso evita duplicidade de produtos e mantém o código/patrimônio como identificador único.
+
+
+## Doações recebidas e realizadas
+
+A aba **Doações** possui dois fluxos:
+
+- **Receber uma doação:** aumenta a quantidade do produto no estoque e registra o doador.
+- **Doar um produto:** reduz a quantidade disponível, registra o destinatário e impede a saída de uma quantidade maior que o estoque disponível. Produtos atualmente emprestados também são descontados do cálculo de disponibilidade.
+
+As duas operações ficam registradas no histórico e são incluídas no backup JSON.

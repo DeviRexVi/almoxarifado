@@ -56,6 +56,7 @@ Responsável pela lógica da aplicação:
 - controle de estoque;
 - empréstimos;
 - devoluções;
+- registro de doações recebidas;
 - histórico;
 - Dashboard;
 - exportação CSV;
@@ -100,6 +101,7 @@ O arquivo contém as seções principais:
 - Adicionar/Editar produto;
 - Categorias;
 - Empréstimos;
+- Doações;
 - Histórico;
 - Sistema.
 
@@ -136,6 +138,7 @@ Entre os indicadores estão:
 - itens com estoque baixo;
 - itens sem estoque;
 - empréstimos ativos;
+- quantidade de doações registradas;
 - distribuição do estoque por categoria;
 - movimentações recentes.
 
@@ -450,3 +453,25 @@ git commit -m "feat: adiciona nova funcionalidade"
 ## 12. Autor
 
 Projeto acadêmico desenvolvido para o Trabalho de Conclusão de Aprendizagem (TCA).
+
+
+## Doações
+
+A aba **Doações** permite registrar produtos recebidos pela instituição. Cada registro informa o produto, a quantidade recebida, o doador, a data e observações opcionais.
+
+Ao registrar uma doação, a quantidade é adicionada imediatamente ao estoque disponível e uma movimentação do tipo `Doação` é criada no histórico. Os registros também ficam armazenados no `localStorage`, junto aos demais dados do sistema.
+
+O fluxo utilizado é:
+
+1. Selecionar um produto já cadastrado;
+2. Informar a quantidade recebida;
+3. Informar o doador;
+4. Informar a data da doação;
+5. Adicionar observações, se necessário;
+6. Confirmar o registro.
+
+Essa abordagem mantém a entrada de materiais separada dos empréstimos e facilita a prestação de contas sobre a origem dos produtos.
+
+## Doações
+
+O sistema permite registrar tanto produtos recebidos por doação, que aumentam o estoque, quanto produtos doados pelo almoxarifado, que reduzem o estoque disponível.
