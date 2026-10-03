@@ -551,3 +551,8 @@ A aba **Doações** possui dois fluxos:
 - **Doar um produto:** reduz a quantidade disponível, registra o destinatário e impede a saída de uma quantidade maior que o estoque disponível. Produtos atualmente emprestados também são descontados do cálculo de disponibilidade.
 
 As duas operações ficam registradas no histórico e são incluídas no backup JSON.
+
+
+## Recebimento de novos produtos por doação
+
+Ao registrar uma doação recebida, é possível selecionar um produto já cadastrado ou marcar que o produto ainda não está cadastrado. Nesse segundo fluxo, o sistema permite informar os dados do novo produto, cria o cadastro e registra a doação em uma única operação.

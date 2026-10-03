@@ -475,3 +475,8 @@ Essa abordagem mantém a entrada de materiais separada dos empréstimos e facili
 ## Doações
 
 O sistema permite registrar tanto produtos recebidos por doação, que aumentam o estoque, quanto produtos doados pelo almoxarifado, que reduzem o estoque disponível.
+
+
+## Recebimento de novos produtos por doação
+
+Ao registrar uma doação recebida, é possível selecionar um produto já cadastrado ou marcar que o produto ainda não está cadastrado. Nesse segundo fluxo, o sistema permite informar os dados do novo produto, cria o cadastro e registra a doação em uma única operação.

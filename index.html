@@ -433,17 +433,71 @@
                         <p>Registre produtos recebidos e aumente automaticamente o estoque.</p>
                     </div>
 
+                    <div class="form-group donation-new-product-toggle">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="donation-new-product">
+                            <span>Este produto ainda não está cadastrado</span>
+                        </label>
+                    </div>
+
+                    <div id="donation-existing-product-fields">
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="donation-product">Produto recebido</label>
+                                <select id="donation-product"></select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="donation-quantity">Quantidade</label>
+                                <input id="donation-quantity" type="number" min="1" placeholder="Ex.: 5">
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div id="donation-new-product-fields" class="hidden">
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="donation-new-name">Nome do componente</label>
+                                <input id="donation-new-name" placeholder="Ex.: Teclado USB">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="donation-new-code">Código / patrimônio</label>
+                                <input id="donation-new-code" placeholder="Ex.: TEC-001">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="donation-new-category">Categoria</label>
+                                <select id="donation-new-category"></select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="donation-new-quantity">Quantidade recebida</label>
+                                <input id="donation-new-quantity" type="number" min="1" placeholder="Ex.: 5">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="donation-new-minimum">Estoque mínimo</label>
+                                <input id="donation-new-minimum" type="number" min="0" value="0" placeholder="0">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="donation-new-location">Localização</label>
+                                <input id="donation-new-location" placeholder="Ex.: Armário A">
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+                            <label for="donation-new-description">Descrição</label>
+                            <textarea id="donation-new-description" placeholder="Descrição do componente..."></textarea>
+                        </div>
+                    </div>
+
                     <div class="form-grid">
-
-                        <div class="form-group">
-                            <label for="donation-product">Produto recebido</label>
-                            <select id="donation-product" required></select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="donation-quantity">Quantidade</label>
-                            <input id="donation-quantity" type="number" min="1" required placeholder="Ex.: 5">
-                        </div>
 
                         <div class="form-group">
                             <label for="donor">Doador</label>
@@ -467,7 +521,7 @@
                     </div>
 
                     <p class="form-help">
-                        O produto precisa estar cadastrado no estoque. Se for um item novo, cadastre-o primeiro na aba Adicionar.
+                        Se o produto ainda não existir, marque a opção acima para cadastrá-lo diretamente junto com a doação.
                     </p>
 
                 </form>

@@ -1181,6 +1181,24 @@ textarea {
   line-height: 1.5;
 }
 
+.donation-new-product-toggle {
+  margin-bottom: 18px;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
 .donation-quantity-out {
   color: var(--danger);
 }

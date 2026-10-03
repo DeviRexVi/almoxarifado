@@ -2559,6 +2559,41 @@ function renderOutgoingDonationProducts() {
 
 
 /**
+ * Preenche o seletor de categorias usado quando um produto novo é criado
+ * diretamente pelo formulário de recebimento de doação.
+ */
+function renderDonationNewProductCategories() {
+
+    const select =
+        document.getElementById("donation-new-category");
+
+    if (!select) {
+        return;
+    }
+
+    const currentValue = select.value;
+
+    select.innerHTML = "";
+
+    state.categories.forEach(category => {
+
+        const option = document.createElement("option");
+
+        option.value = category;
+        option.textContent = category;
+
+        select.appendChild(option);
+
+    });
+
+    if (state.categories.includes(currentValue)) {
+        select.value = currentValue;
+    }
+
+}
+
+
+/**
  * Configura o formulário responsável pelo registro de doações.
  *
  * Ao confirmar uma doação:
@@ -2581,6 +2616,78 @@ function setupDonationForm() {
     const dateInput =
         document.getElementById("donation-date");
 
+    const newProductToggle =
+        document.getElementById("donation-new-product");
+
+    const existingProductFields =
+        document.getElementById("donation-existing-product-fields");
+
+    const newProductFields =
+        document.getElementById("donation-new-product-fields");
+
+    // Alterna entre o fluxo de produto já cadastrado e o cadastro de um
+    // produto novo feito diretamente durante o recebimento da doação.
+    function updateDonationProductMode() {
+
+        const isNewProduct = Boolean(newProductToggle?.checked);
+
+        existingProductFields?.classList.toggle(
+            "hidden",
+            isNewProduct
+        );
+
+        newProductFields?.classList.toggle(
+            "hidden",
+            !isNewProduct
+        );
+
+        const existingProduct =
+            document.getElementById("donation-product");
+
+        const existingQuantity =
+            document.getElementById("donation-quantity");
+
+        const newName =
+            document.getElementById("donation-new-name");
+
+        const newCategory =
+            document.getElementById("donation-new-category");
+
+        const newQuantity =
+            document.getElementById("donation-new-quantity");
+
+        // Os campos obrigatórios mudam conforme o modo selecionado.
+        if (existingProduct) {
+            existingProduct.required = !isNewProduct;
+        }
+
+        if (existingQuantity) {
+            existingQuantity.required = !isNewProduct;
+        }
+
+        if (newName) {
+            newName.required = isNewProduct;
+        }
+
+        if (newCategory) {
+            newCategory.required = isNewProduct;
+        }
+
+        if (newQuantity) {
+            newQuantity.required = isNewProduct;
+        }
+    }
+
+    if (newProductToggle) {
+        newProductToggle.addEventListener(
+            "change",
+            updateDonationProductMode
+        );
+    }
+
+    // Garante que o formulário comece no modo padrão.
+    updateDonationProductMode();
+
     // Preenche a data automaticamente com o dia atual.
     if (dateInput) {
         dateInput.value = new Date()
@@ -2592,12 +2699,9 @@ function setupDonationForm() {
 
         event.preventDefault();
 
-        const productId =
-            document.getElementById("donation-product").value;
-
-        const quantity =
-            Number(
-                document.getElementById("donation-quantity").value
+        const isNewProduct =
+            Boolean(
+                document.getElementById("donation-new-product")?.checked
             );
 
         const donor =
@@ -2609,25 +2713,89 @@ function setupDonationForm() {
         const notes =
             document.getElementById("donation-notes").value.trim();
 
-        const product =
-            state.products.find(item => item.id === productId);
+        let product;
+        let quantity;
 
-        if (!product) {
-            showToast("Selecione um produto.");
-            return;
+        if (isNewProduct) {
+
+            const name =
+                document.getElementById("donation-new-name").value.trim();
+
+            const code =
+                document.getElementById("donation-new-code").value.trim();
+
+            const category =
+                document.getElementById("donation-new-category").value;
+
+            quantity = Number(
+                document.getElementById("donation-new-quantity").value
+            );
+
+            const minimumStock = Number(
+                document.getElementById("donation-new-minimum").value || 0
+            );
+
+            const location =
+                document.getElementById("donation-new-location").value.trim();
+
+            const description =
+                document.getElementById("donation-new-description").value.trim();
+
+            if (!name || !category || quantity <= 0 || !donor || !date) {
+                showToast("Preencha os dados do novo produto e da doação.");
+                return;
+            }
+
+            if (code && state.products.some(item => item.code === code)) {
+                showToast("Já existe um produto com esse código.");
+                return;
+            }
+
+            product = {
+                id: generateId(),
+                name,
+                code,
+                category,
+                quantity,
+                minimumStock: Math.max(0, minimumStock),
+                location,
+                description,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            state.products.push(product);
+
+        } else {
+
+            const productId =
+                document.getElementById("donation-product").value;
+
+            quantity = Number(
+                document.getElementById("donation-quantity").value
+            );
+
+            product =
+                state.products.find(item => item.id === productId);
+
+            if (!product) {
+                showToast("Selecione um produto.");
+                return;
+            }
+
+            if (quantity <= 0 || !donor || !date) {
+                showToast("Preencha os dados da doação corretamente.");
+                return;
+            }
+
+            // A doação entra diretamente no estoque disponível.
+            product.quantity += quantity;
+            product.updatedAt = new Date().toISOString();
         }
-
-        if (quantity <= 0 || !donor || !date) {
-            showToast("Preencha os dados da doação corretamente.");
-            return;
-        }
-
-        // A doação entra diretamente no estoque disponível.
-        product.quantity += quantity;
 
         const donation = {
             id: generateId(),
-            productId,
+            productId: product.id,
             productName: product.name,
             quantity,
             donor,
@@ -2646,6 +2814,13 @@ function setupDonationForm() {
         saveState();
 
         form.reset();
+
+        // O reset devolve o formulário ao modo de produto existente.
+        if (newProductToggle) {
+            newProductToggle.checked = false;
+        }
+
+        updateDonationProductMode();
 
         // Depois do reset, a data volta a ser preenchida automaticamente.
         dateInput.value = new Date()
@@ -3773,6 +3948,8 @@ function renderAll() {
     renderLoans();
 
     renderDonationProducts();
+
+    renderDonationNewProductCategories();
 
     renderOutgoingDonationProducts();
 
